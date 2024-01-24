@@ -18,6 +18,11 @@ coverage
 dist
 build
 
+# Foundry files
+/cache_forge
+/out
+
+
 # Hardhat files
 /cache
 /artifacts

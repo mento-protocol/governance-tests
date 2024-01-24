@@ -1,0 +1,8 @@
+[profile.default]
+src = "./lib/mento-core/contracts"
+out = 'out'
+libs = ['node_modules', 'lib']
+auto_detect_solc = true
+test = 'test'
+cache_path  = 'cache_forge'
+via_ir = true

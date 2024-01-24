@@ -37,6 +37,7 @@
     "typescript": "^5.3.3"
   },
   "dependencies": {
-    "@mento-protocol/mento-sdk": "^0.2.0"
+    "@mento-protocol/mento-sdk": "^0.2.0",
+    "@nomicfoundation/hardhat-foundry": "^1.1.1"
   }
 }
