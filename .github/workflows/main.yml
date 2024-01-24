@@ -29,8 +29,5 @@ jobs:
       - name: Lint
         run: pnpm lint
 
-      - name: start local node
-        run: pnpm hardhat node
-
-      - name: Test
-        run: pnpm test
+      - name: Start node & test
+        run: pnpm hardhat node & pnpm test
