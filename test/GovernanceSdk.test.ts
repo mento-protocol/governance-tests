@@ -1,6 +1,14 @@
 import { expect } from 'chai';
 import hre, { ethers } from 'hardhat';
 import { getContractsByChainId } from '@mento-protocol/mento-sdk';
+import {
+  Locking,
+  Locking__factory,
+  MentoGovernor,
+  MentoGovernor__factory,
+  MentoToken,
+  MentoToken__factory,
+} from '../typechain-types';
 
 // TODO: @bayological Update SDK to export ContractAddresses type
 export type ContractAddresses = {
@@ -29,20 +37,49 @@ describe('Governance SDK', function () {
   });
 
   describe('Mento Governor', function () {
-    this.beforeAll(async function () {});
+    let mentoGovernor: MentoGovernor;
+
+    this.beforeAll(async function () {
+      // Instantiate MentoGovernor contract
+      mentoGovernor = MentoGovernor__factory.connect(
+        governanceAddresses.MentoGovernor,
+        ethers.provider,
+      );
+    });
 
     it('Should return token address that matches static SDK address', async function () {
-      const abi: string[] = ['function token() view returns (address)'];
+      // Get token address from MentoGovernor contract
+      const veTokenAddress = await mentoGovernor.token();
 
-      const governor = await ethers.getContractAt(
-        abi,
-        governanceAddresses.MentoGovernor,
+      // Instantiate Locking contract
+      const veMentoToken: Locking = Locking__factory.connect(
+        veTokenAddress,
+        ethers.provider,
       );
 
-      // @ts-expect-error "governor.token()" is possibly undefined
-      const governorTokenAddress = await governor.token();
+      // Get token address from Locking contract
+      const mentoToken: string = await veMentoToken.token();
 
-      expect(governorTokenAddress).equal(governanceAddresses.MentoToken);
+      // Compare token addresses
+      expect(mentoToken).equal(governanceAddresses.MentoToken);
+    });
+  });
+
+  describe('Mento Token', function () {
+    let mentoToken: MentoToken;
+
+    this.beforeAll(async function () {
+      // Instantiate MentoToken contract
+      mentoToken = MentoToken__factory.connect(
+        governanceAddresses.MentoToken,
+        ethers.provider,
+      );
+    });
+
+    it('Should have supply gt zero', async function () {
+      // Get total supply
+      const totalSupply = await mentoToken.totalSupply();
+      expect(totalSupply).greaterThan(0);
     });
   });
 });

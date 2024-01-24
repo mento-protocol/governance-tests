@@ -58,6 +58,9 @@ devDependencies:
   eslint-plugin-promise:
     specifier: ^6.0.0
     version: 6.1.1(eslint@8.56.0)
+  ethers:
+    specifier: ^6.10.0
+    version: 6.10.0
   hardhat:
     specifier: ^2.19.4
     version: 2.19.4(ts-node@10.9.2)(typescript@5.3.3)
