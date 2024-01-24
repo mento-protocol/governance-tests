@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "pnpm exec hardhat test --network hardhat",
     "build": "tsc",
     "lint": "pnpm run prettier:check &&  pnpm run eslint:check",
     "prettier:check": "prettier --config \"./.prettierrc.json\" --check \"**/*.ts\"",
@@ -17,6 +17,8 @@
   "license": "ISC",
   "devDependencies": {
     "@nomicfoundation/hardhat-chai-matchers": "^2.0.3",
+    "@nomicfoundation/hardhat-ethers": "^3.0.5",
+    "@nomicfoundation/hardhat-network-helpers": "^1.0.10",
     "@nomicfoundation/hardhat-toolbox": "^4.0.0",
     "@tsconfig/strictest": "^2.0.2",
     "@types/chai": "^4.3.11",
@@ -33,5 +35,8 @@
     "prettier": "^3.2.4",
     "ts-node": "^10.9.2",
     "typescript": "^5.3.3"
+  },
+  "dependencies": {
+    "@mento-protocol/mento-sdk": "^0.2.0"
   }
 }
