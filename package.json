@@ -1,18 +1,31 @@
 {
-   "name": "governance-tests",
-   "version": "1.0.0",
-   "description": "",
-   "main": "index.js",
-   "scripts": {
-      "test": "echo \"Error: no test specified\" && exit 1",
-      "build": "tsc"
-   },
-   "keywords": [],
-   "author": "",
-   "license": "ISC",
-   "devDependencies": {
-      "@tsconfig/strictest": "^2.0.2",
-      "@types/node": "^20.11.6",
-      "typescript": "^5.3.3"
-   }
+  "name": "governance-tests",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "tsc",
+    "lint": "pnpm run prettier:check &&  pnpm run eslint:check",
+    "prettier:check": "prettier --config \"./.prettierrc.json\" --check \"**/*.ts\"",
+    "prettier": "prettier --config \"./.prettierrc.json\" --write \"**/*.ts\"",
+    "eslint:check": "eslint --config \"./.eslintrc.json\" \"**/*.ts\"",
+    "eslint": "eslint --config \"./.eslintrc.json\" \"**/*.ts\" --fix"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@tsconfig/strictest": "^2.0.2",
+    "@types/node": "^20.11.6",
+    "@typescript-eslint/eslint-plugin": "^6.19.1",
+    "@typescript-eslint/parser": "^6.19.1",
+    "eslint": "^8.56.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-import": "^2.25.2",
+    "eslint-plugin-n": "^15.0.0 || ^16.0.0 ",
+    "eslint-plugin-promise": "^6.0.0",
+    "prettier": "^3.2.4",
+    "typescript": "^5.3.3"
+  }
 }
