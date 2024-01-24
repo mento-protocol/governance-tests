@@ -17,3 +17,15 @@ coverage
 *.d.ts
 dist
 build
+
+# Hardhat files
+/cache
+/artifacts
+
+# TypeChain files
+/typechain
+/typechain-types
+
+# solidity-coverage files
+/coverage
+/coverage.json
