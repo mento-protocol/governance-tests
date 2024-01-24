@@ -16,7 +16,7 @@
     "plugin:import/recommended",
     "prettier"
   ],
-  "ignorePatterns": ["node_modules/", "build/"],
+  "ignorePatterns": ["node_modules/", "build/", "lib/"],
   "rules": {
     "semi": "off",
     "@typescript-eslint/no-unused-vars": "error",
