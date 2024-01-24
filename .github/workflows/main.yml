@@ -8,6 +8,13 @@ jobs:
     steps:
       - name: Checkout repo
         uses: actions/checkout@v3
+        with:
+          submodules: 'recursive'
+
+      - name: 'Install Foundry'
+        uses: 'onbjerg/foundry-toolchain@v1'
+        with:
+          version: 'nightly'
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v2.4.0
