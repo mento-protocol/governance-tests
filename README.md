@@ -1,13 +1,25 @@
-# governance-tests
+# Mento Governance Tests
 
-This project demonstrates a basic Hardhat use case. It comes with a sample contract, a test for that contract, and a script that deploys that contract.
+This repo contains tests to verify the Mento Protocol governance setup.
 
-Try running some of the following tasks:
+## Getting Started
 
-```shell
-npx hardhat help
-npx hardhat test
-REPORT_GAS=true npx hardhat test
-npx hardhat node
-npx hardhat run scripts/deploy.ts
+```bash
+# Get the latest code
+git clone git@github.com:mento-protocol/governance-tests.git
+
+# Change directory to the the newly cloned repo
+cd governance-tests
+
+# Install dependencies with pnpm
+pnpm install
+
+# Install submodule dependencies with forge
+forge install
+
+# Build the contracts, generate ts types & run typescript compiler
+pnpm build
+
+# Run the tests against alfajores
+pnpm test:alfajores
 ```
