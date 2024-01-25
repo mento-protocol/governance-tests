@@ -34,6 +34,10 @@ describe('Governance SDK', function () {
     if (!governanceAddresses) {
       throw new Error('Governance addresses not found for this chain');
     }
+
+    console.log('\r\n========================');
+    console.log('Running tests on network with chain id:', chainId);
+    console.log('========================\r\n');
   });
 
   describe('Mento Governor', function () {

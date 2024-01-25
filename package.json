@@ -4,7 +4,9 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "pnpm exec hardhat test --network hardhat",
+    "test": "NETWORK=celo pnpm exec hardhat test",
+    "test:alfajores": "NETWORK=alfajores pnpm exec hardhat test",
+    "test:baklava": "NETWORK=baklava pnpm exec hardhat test",
     "build": "forge build && pnpm exec hardhat typechain && pnpm tsc",
     "lint": "pnpm run prettier:check &&  pnpm run eslint:check",
     "prettier:check": "prettier --config \"./.prettierrc.json\" --check \"**/*.ts\"",
