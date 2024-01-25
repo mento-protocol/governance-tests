@@ -1,39 +1,20 @@
 import { HardhatUserConfig } from 'hardhat/config';
+import { NetworkConfig, networks, NetworkName } from './config';
 import '@nomicfoundation/hardhat-toolbox';
 import '@nomicfoundation/hardhat-foundry';
 
-const errMessage =
-  'Invalid network, NETWORK env var must be `alfajores`, `baklava`, or `celo`';
-
-const network = process.env.NETWORK;
-if (!network) {
-  throw new Error('NETWORK environment variable not found');
-}
-
-function getNetworkUrl(): string {
-  switch (network) {
-    case 'alfajores':
-      return 'https://alfajores-forno.celo-testnet.org';
-    case 'baklava':
-      return 'https://baklava-forno.celo-testnet.org';
-    case 'celo':
-      return 'https://forno.celo.org';
-    default:
-      throw new Error(errMessage);
+function getNetworkConfig(): NetworkConfig {
+  const network = process.env.NETWORK;
+  if (!network) {
+    throw new Error('NETWORK environment variable was not set');
   }
-}
-
-function getNetworkChainId(): number {
-  switch (network) {
-    case 'alfajores':
-      return 44787;
-    case 'baklava':
-      return 62320;
-    case 'celo':
-      return 42220;
-    default:
-      throw new Error(errMessage);
+  if (!networks[network as NetworkName]) {
+    throw new Error(
+      'Invalid network, NETWORK env var must be `alfajores`, `baklava`, or `celo`',
+    );
   }
+
+  return networks[network as NetworkName];
 }
 
 const config: HardhatUserConfig = {
@@ -42,9 +23,9 @@ const config: HardhatUserConfig = {
     hardhat: {
       forking: {
         enabled: true,
-        url: getNetworkUrl(),
+        url: getNetworkConfig().url,
       },
-      chainId: getNetworkChainId(),
+      chainId: getNetworkConfig().chainId,
       hardfork: 'berlin',
     },
   },
