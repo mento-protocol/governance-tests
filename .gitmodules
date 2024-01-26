@@ -1,6 +1,0 @@
-[submodule "lib/mento-core"]
-	path = lib/mento-core
-	url = https://github.com/mento-protocol/mento-core
-[submodule "lib/forge-std"]
-	path = lib/forge-std
-	url = https://github.com/foundry-rs/forge-std

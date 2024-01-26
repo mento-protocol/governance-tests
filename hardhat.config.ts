@@ -1,7 +1,6 @@
 import { HardhatUserConfig } from 'hardhat/config';
 import { NetworkConfig, networks, NetworkName } from './config';
 import '@nomicfoundation/hardhat-toolbox';
-import '@nomicfoundation/hardhat-foundry';
 
 function getNetworkConfig(): NetworkConfig {
   const network = process.env.NETWORK;
@@ -28,36 +27,6 @@ const config: HardhatUserConfig = {
       chainId: getNetworkConfig().chainId,
       hardfork: 'berlin',
     },
-  },
-  paths: {
-    sources: './lib/mento-core/contracts',
-  },
-  typechain: {
-    outDir: 'typechain-types',
-    target: 'ethers-v6',
-  },
-  solidity: {
-    compilers: [
-      {
-        version: '0.5.0',
-      },
-      {
-        version: '0.5.13',
-      },
-      {
-        version: '0.5.17',
-      },
-      {
-        version: '0.8.18',
-        settings: {
-          viaIR: true,
-          optimizer: {
-            enabled: true,
-            runs: 200,
-          },
-        },
-      },
-    ],
   },
 };
 
