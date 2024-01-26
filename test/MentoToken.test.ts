@@ -3,6 +3,7 @@ import hre, { ethers } from 'hardhat';
 import * as mento from '@mento-protocol/mento-sdk';
 
 import { MentoToken, MentoToken__factory } from '@mento-protocol/mento-core-ts';
+import { parseEther } from 'ethers';
 
 describe('Mento Token', function () {
   const { provider } = ethers;
@@ -34,6 +35,6 @@ describe('Mento Token', function () {
 
   it('Should have supply gte initial supply', async function () {
     const totalSupply = await mentoToken.totalSupply();
-    expect(totalSupply).greaterThanOrEqual(350_000_000);
+    expect(totalSupply).greaterThanOrEqual(parseEther('350000000'));
   });
 });
