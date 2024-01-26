@@ -25,6 +25,7 @@ describe('Mento Token', function () {
 
     mentoToken = MentoToken__factory.connect(
       governanceAddresses.MentoToken,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       provider as any,
     );
 
