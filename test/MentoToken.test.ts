@@ -1,14 +1,12 @@
 import { expect } from 'chai';
 import hre, { ethers } from 'hardhat';
-import {
-  getContractsByChainId,
-  ContractAddresses,
-} from '@mento-protocol/mento-sdk';
+import * as mento from '@mento-protocol/mento-sdk';
+
 import { MentoToken, MentoToken__factory } from '@mento-protocol/mento-core-ts';
 
 describe('Mento Token', function () {
   const { provider } = ethers;
-  let governanceAddresses: ContractAddresses;
+  let governanceAddresses: mento.ContractAddresses;
   let mentoToken: MentoToken;
 
   before(async function () {
@@ -18,7 +16,7 @@ describe('Mento Token', function () {
       throw new Error('Chain ID not found');
     }
 
-    governanceAddresses = getContractsByChainId(chainId);
+    governanceAddresses = mento.getContractsByChainId(chainId);
     if (!governanceAddresses) {
       throw new Error('Governance addresses not found for this chain');
     }
