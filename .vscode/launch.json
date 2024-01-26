@@ -1,0 +1,16 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Debug tests",
+      "type": "node",
+      "request": "launch",
+      "console": "integratedTerminal",
+      "stopOnEntry": false,
+      "skipFiles": ["<node_internals>/**", "${workspaceRoot}/node_modules/**"],
+      "cwd": "${workspaceFolder}",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["${workspaceFolder}/node_modules/.bin/hardhat", "test"]
+    }
+  ]
+}
