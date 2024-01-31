@@ -1,13 +1,13 @@
 import { expect } from 'chai';
 import hre, { ethers } from 'hardhat';
-import * as mento from '@mento-protocol/mento-sdk';
+import { ContractAddresses, addresses } from '@mento-protocol/mento-sdk';  
 
 import { MentoToken, MentoToken__factory } from '@mento-protocol/mento-core-ts';
 
 describe('Mento Token', function () {
   const { provider, parseEther } = ethers;
 
-  let governanceAddresses: mento.ContractAddresses;
+  let contractAddresses: ContractAddresses | undefined;
   let mentoToken: MentoToken;
 
   before(async function () {
@@ -17,13 +17,13 @@ describe('Mento Token', function () {
       throw new Error('Chain ID not found');
     }
 
-    governanceAddresses = mento.getContractsByChainId(chainId);
-    if (!governanceAddresses) {
+    contractAddresses = addresses[chainId];
+    if (!contractAddresses) {
       throw new Error('Governance addresses not found for this chain');
     }
 
     mentoToken = MentoToken__factory.connect(
-      governanceAddresses.MentoToken,
+      contractAddresses.MentoToken,
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       provider as any,
     );
