@@ -14,9 +14,6 @@ cd governance-tests
 # Install dependencies with pnpm
 pnpm install
 
-# Install submodule dependencies with forge
-forge install
-
 # Build the contracts, generate ts types & run typescript compiler
 pnpm build
 
