@@ -2,7 +2,14 @@ import hre, { ethers } from 'hardhat';
 import { parseEther } from 'ethers';
 import { addresses, ContractAddresses } from '@mento-protocol/mento-sdk';
 
-import { Airgrab, Airgrab__factory } from '@mento-protocol/mento-core-ts';
+import {
+  Airgrab,
+  Airgrab__factory,
+  Locking,
+  Locking__factory,
+  MentoToken,
+  MentoToken__factory,
+} from '@mento-protocol/mento-core-ts';
 
 type ClaimParameters = {
   claimAmount: string;
@@ -14,11 +21,13 @@ type ClaimParameters = {
   fractalId: string;
 };
 
-describe('Airgrab', function () {
+describe.only('Airgrab', function () {
   const { provider } = ethers;
 
   let contractAddresses: ContractAddresses | undefined;
   let airgrab: Airgrab;
+  let veMentoToken: Locking;
+  let mentoToken: MentoToken;
 
   const testUserWithKycAndAllocation: string =
     '0x12860B283318bb73195F22C54d88f094aFc3DF1';
@@ -41,12 +50,41 @@ describe('Airgrab', function () {
       provider as any,
     );
 
-    console.log('\r\n========================');
+    veMentoToken = Locking__factory.connect(
+      contractAddresses.Locking,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      provider as any,
+    );
+
+    mentoToken = MentoToken__factory.connect(
+      contractAddresses.MentoToken,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      provider as any,
+    );
+
+    console.log('\r\n======================================================');
     console.log('Running Airgrab tests on network with chain id:', chainId);
-    console.log('========================\r\n');
+    console.log(
+      '==========================================================\r\n',
+    );
   });
 
   describe('Claim', function () {
+    this.beforeEach(async function () {
+      // Reset the network state
+      await hre.network.provider.request({
+        method: 'hardhat_reset',
+        params: [],
+      });
+      // Impersonate the emission contract and mint some tokens to the airgrab contract
+      const emissionSigner = await ethers.getImpersonatedSigner(
+        contractAddresses!.Emission,
+      );
+      await mentoToken
+        .connect(emissionSigner)
+        .mint(contractAddresses!.Airgrab, parseEther('1000').toString());
+    });
+
     it('Should be successfull using a KYCed & eligible account', async function () {
       // Arrange
       const claimParams: ClaimParameters = {
@@ -58,6 +96,37 @@ describe('Airgrab', function () {
         fractalProofApprovedAt: BigInt(0),
         fractalId: '',
       };
+
+      // const emissionSigner = await ethers.getImpersonatedSigner(
+      //   contractAddresses!.Emission,
+      // );
+
+      // mentoToken.
+      //   .connect(emissionSigner)
+      //   .mint(contractAddresses!.Airgrab, parseEther('1000').toString());
+
+      console.log('Airgrab address:', contractAddresses!.Airgrab);
+      console.log('MentoToken address:', contractAddresses!.MentoToken);
+
+      //
+
+      const airgrabMentoBalanceBefore = await mentoToken.balanceOf(
+        contractAddresses!.Airgrab,
+      );
+
+      const userVeTokenBalanceBefore = await veMentoToken.balanceOf(
+        testUserWithKycAndAllocation,
+      );
+
+      console.log(
+        'User veToken balance before:',
+        userVeTokenBalanceBefore.toString(),
+      );
+
+      console.log(
+        'Airgrab Mento balance before:',
+        airgrabMentoBalanceBefore.toString(),
+      );
 
       // Act
       await airgrab.claim(
@@ -74,6 +143,7 @@ describe('Airgrab', function () {
       // Assert
 
       // Things to do:
+      // - Need to simulate the emission contract and mint some tokens to the airgrab contract
       // - Add assert to verivy that the user's veToken balance has increased by the claim amount
       // - Add assert to verify that the user has a lock
       // - Add assert to verify that the tokens claimed have increased
