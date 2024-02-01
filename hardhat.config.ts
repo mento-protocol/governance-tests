@@ -26,6 +26,7 @@ const config: HardhatUserConfig = {
       },
       chainId: getNetworkConfig().chainId,
       hardfork: 'berlin',
+      gasPrice: 0,
     },
   },
 };
