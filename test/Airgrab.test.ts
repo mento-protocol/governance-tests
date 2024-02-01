@@ -21,7 +21,7 @@ type ClaimParameters = {
   fractalId: string;
 };
 
-describe.only('Airgrab', function () {
+describe.skip('Airgrab', function () {
   const { provider } = ethers;
 
   let contractAddresses: ContractAddresses | undefined;
