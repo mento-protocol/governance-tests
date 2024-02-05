@@ -82,7 +82,7 @@ describe.only('Locking', function () {
       .lock(alice.address, alice.address, initialBalance, 10, 7);
     await locking
       .connect(bob)
-      .lock(bob.address, bob.address, initialBalance / BigInt(2), 11, 13);
+      .lock(bob.address, bob.address, initialBalance / 2n, 11, 13);
 
     const aliceVeBalance = await locking.balanceOf(alice.address);
     const aliceVotingPower = await locking.getVotes(alice.address);
@@ -96,41 +96,77 @@ describe.only('Locking', function () {
       governanceAddresses.Locking,
     );
 
-    expect(aliceVeBalance).to.eq(
-      calculateAmountToBeMinted(initialBalance, BigInt(10), BigInt(7)),
-    );
+    expect(aliceVeBalance).to.eq(calculateVotingPower(initialBalance, 10n, 7n));
     expect(aliceVotingPower).to.eq(aliceVeBalance);
     expect(bobVeBalance).to.eq(
-      calculateAmountToBeMinted(
-        initialBalance / BigInt(2),
-        BigInt(11),
-        BigInt(13),
-      ),
+      calculateVotingPower(initialBalance / 2n, 11n, 13n),
     );
     expect(bobVotingPower).to.eq(bobVeBalance);
 
     expect(aliceMentoBalance).to.eq(0);
-    expect(bobMentoBalance).to.eq(initialBalance / BigInt(2));
+    expect(bobMentoBalance).to.eq(initialBalance / 2n);
     expect(lockingBalanceAfter - lockingBalanceBefore).to.eq(
-      initialBalance + initialBalance / BigInt(2),
+      initialBalance + initialBalance / 2n,
+    );
+  });
+
+  it('should delegate created locks', async function () {
+    await locking
+      .connect(alice)
+      .lock(alice.address, bob.address, initialBalance, 10, 7);
+    await locking
+      .connect(bob)
+      .lock(bob.address, bob.address, initialBalance / 2n, 11, 13);
+
+    const aliceVotingPower = await locking.getVotes(alice.address);
+    const bobVotingPower = await locking.getVotes(bob.address);
+
+    expect(aliceVotingPower).to.eq(0);
+    expect(bobVotingPower).to.eq(
+      calculateVotingPower(initialBalance / 2n, 11n, 13n) +
+        calculateVotingPower(initialBalance, 10n, 7n),
+    );
+  });
+
+  it('should delegate existing locks', async function () {
+    const currentLockId = await locking.counter();
+
+    await locking
+      .connect(alice)
+      .lock(alice.address, alice.address, initialBalance, 10, 7);
+
+    await locking
+      .connect(bob)
+      .lock(bob.address, bob.address, initialBalance / 2n, 11, 13);
+
+    await locking.connect(alice).delegateTo(currentLockId + 1n, bob.address);
+
+    const aliceVotingPower = await locking.getVotes(alice.address);
+    const bobVotingPower = await locking.getVotes(bob.address);
+
+    expect(aliceVotingPower).to.eq(0);
+    expect(bobVotingPower).to.eq(
+      calculateVotingPower(initialBalance / 2n, 11n, 13n) +
+        calculateVotingPower(initialBalance, 10n, 7n),
     );
   });
 });
 
-function calculateAmountToBeMinted(
+function calculateVotingPower(
   tokens: bigint,
   slopePeriod: bigint,
   cliffPeriod: bigint,
 ): bigint {
-  const ST_FORMULA_CONST_MULTIPLIER = BigInt(2 * 10 ** 7); // stFormula const multiplier  20000000
-  const ST_FORMULA_CLIFF_MULTIPLIER = BigInt(8 * 10 ** 7); // stFormula cliff multiplier  80000000
-  const ST_FORMULA_SLOPE_MULTIPLIER = BigInt(4 * 10 ** 7); // stFormula slope multiplier  40000000
-  const ST_FORMULA_DIVIDER = BigInt(1 * 10 ** 8); // stFormula divider          100000000
-  const MAX_CLIFF_PERIOD = BigInt(103);
-  const MAX_SLOPE_PERIOD = BigInt(104);
-  const MIN_CLIFF_PERIOD = BigInt(0);
-  const MIN_SLOPE_PERIOD = BigInt(1);
+  const ST_FORMULA_CONST_MULTIPLIER = 2n * 10n ** 7n; // Example conversion
+  const ST_FORMULA_CLIFF_MULTIPLIER = 8n * 10n ** 7n;
+  const ST_FORMULA_SLOPE_MULTIPLIER = 4n * 10n ** 7n;
+  const ST_FORMULA_DIVIDER = 1n * 10n ** 8n;
+  const MAX_CLIFF_PERIOD = 103n;
+  const MAX_SLOPE_PERIOD = 104n;
+  const MIN_CLIFF_PERIOD = 0n;
+  const MIN_SLOPE_PERIOD = 1n;
 
+  // Arithmetic operations using BigInt directly
   const amount =
     (tokens *
       (ST_FORMULA_CONST_MULTIPLIER +
