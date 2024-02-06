@@ -76,28 +76,31 @@ describe.only('Locking', function () {
   });
 
   it('should lock MENTO in exchange for veMENTO', async function () {
-    const lockingBalanceBefore = await mentoToken.balanceOf(
-      governanceAddresses.Locking,
+    await expect(
+      locking
+        .connect(alice)
+        .lock(alice.address, alice.address, initialBalance, 10, 7),
+    ).to.changeTokenBalances(
+      mentoToken,
+      [alice, locking],
+      [-initialBalance, initialBalance],
     );
 
-    await locking
-      .connect(alice)
-      .lock(alice.address, alice.address, initialBalance, 10, 7);
-    await locking
-      .connect(bob)
-      .lock(bob.address, bob.address, initialBalance / 2n, 11, 13);
+    await expect(
+      locking
+        .connect(bob)
+        .lock(bob.address, bob.address, initialBalance / 2n, 11, 13),
+    ).to.changeTokenBalances(
+      mentoToken,
+      [bob, locking],
+      [-initialBalance / 2n, initialBalance / 2n],
+    );
 
     const aliceVeBalance = await locking.balanceOf(alice.address);
     const aliceVotingPower = await locking.getVotes(alice.address);
-    const aliceMentoBalance = await mentoToken.balanceOf(alice.address);
 
     const bobVeBalance = await locking.balanceOf(bob.address);
     const bobVotingPower = await locking.getVotes(bob.address);
-    const bobMentoBalance = await mentoToken.balanceOf(bob.address);
-
-    const lockingBalanceAfter = await mentoToken.balanceOf(
-      governanceAddresses.Locking,
-    );
 
     expect(aliceVeBalance).to.eq(calculateVotingPower(initialBalance, 10n, 7n));
     expect(aliceVotingPower).to.eq(aliceVeBalance);
@@ -105,12 +108,6 @@ describe.only('Locking', function () {
       calculateVotingPower(initialBalance / 2n, 11n, 13n),
     );
     expect(bobVotingPower).to.eq(bobVeBalance);
-
-    expect(aliceMentoBalance).to.eq(0);
-    expect(bobMentoBalance).to.eq(initialBalance / 2n);
-    expect(lockingBalanceAfter - lockingBalanceBefore).to.eq(
-      initialBalance + initialBalance / 2n,
-    );
   });
 
   it('should withdraw correct amounts after weeks', async function () {
