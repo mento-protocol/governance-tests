@@ -11,7 +11,7 @@ import {
 } from '@mento-protocol/mento-core-ts';
 import { calculateVotingPower, timeTravel } from './utils/utils';
 
-describe.only('Locking', function () {
+describe('Locking', function () {
   const { provider, parseEther, MaxUint256 } = ethers;
 
   let governanceAddresses: mento.ContractAddresses;
