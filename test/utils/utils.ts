@@ -1,6 +1,6 @@
 import * as helpers from '@nomicfoundation/hardhat-toolbox/network-helpers';
 
-export const timeTravel = async (days: number) => {
+export const timeTravel = async (days: number): Promise<void> => {
   const blocks = (days * 86400) / 5;
   await helpers.mine(blocks);
 };
