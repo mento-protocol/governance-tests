@@ -9,6 +9,7 @@ import {
   Locking,
   Locking__factory,
 } from '@mento-protocol/mento-core-ts';
+import { calculateVotingPower, timeTravel } from './utils/utils';
 
 describe.only('Locking', function () {
   const { provider, parseEther, MaxUint256 } = ethers;
@@ -28,10 +29,7 @@ describe.only('Locking', function () {
     const treasury = await ethers.getImpersonatedSigner(
       governanceAddresses.TimelockController,
     );
-    const signers = (await ethers.getSigners()) as HardhatEthersSigner[];
-    if (signers[0] && signers[1]) {
-      [alice, bob] = signers;
-    }
+
     initialBalance = parseEther('1000');
     await mentoToken.connect(treasury).transfer(alice.address, initialBalance);
     await mentoToken.connect(treasury).transfer(bob.address, initialBalance);
@@ -48,6 +46,11 @@ describe.only('Locking', function () {
     const chainId = hre.network.config.chainId;
     if (!chainId) {
       throw new Error('Chain ID not found');
+    }
+
+    const signers = (await ethers.getSigners()) as HardhatEthersSigner[];
+    if (signers[0] && signers[1]) {
+      [alice, bob] = signers;
     }
 
     governanceAddresses = mento.getContractsByChainId(chainId);
@@ -110,6 +113,130 @@ describe.only('Locking', function () {
     );
   });
 
+  it('should withdraw correct amounts after weeks', async function () {
+    await locking
+      .connect(alice)
+      .lock(alice.address, alice.address, initialBalance, 10, 7);
+    await locking
+      .connect(bob)
+      .lock(bob.address, bob.address, initialBalance / 2n, 11, 13);
+
+    await timeTravel(21); // 3 weeks
+
+    let aliceVotingPower = await locking.getVotes(alice.address);
+    let bobVotingPower = await locking.getVotes(bob.address);
+    const aliceCalculatedVotingPower = calculateVotingPower(
+      initialBalance,
+      10n,
+      7n,
+    );
+    const bobCalculatedVotingPower = calculateVotingPower(
+      initialBalance / 2n,
+      11n,
+      13n,
+    );
+
+    expect(aliceVotingPower).to.eq(aliceCalculatedVotingPower);
+    expect(bobVotingPower).to.eq(bobCalculatedVotingPower);
+
+    // withdraw as soon as locking
+    // should not transfer anything
+    await expect(locking.connect(alice).withdraw()).to.changeTokenBalances(
+      mentoToken,
+      [alice, locking],
+      [0, 0],
+    );
+    await expect(locking.connect(bob).withdraw()).to.changeTokenBalances(
+      mentoToken,
+      [bob, locking],
+      [0, 0],
+    );
+
+    await timeTravel(28); // 3 weeks + 4 weeks = 7 weeks
+
+    aliceVotingPower = await locking.getVotes(alice.address);
+    bobVotingPower = await locking.getVotes(bob.address);
+
+    // still in the cliff period
+    expect(aliceVotingPower).to.eq(aliceCalculatedVotingPower);
+    expect(bobVotingPower).to.eq(bobCalculatedVotingPower);
+
+    // withdraw in cliff period
+    // should not transfer anything
+    await expect(locking.connect(alice).withdraw()).to.changeTokenBalances(
+      mentoToken,
+      [alice, locking],
+      [0, 0],
+    );
+    await expect(locking.connect(bob).withdraw()).to.changeTokenBalances(
+      mentoToken,
+      [bob, locking],
+      [0, 0],
+    );
+
+    await timeTravel(35); // 7 weeks + 5 weeks = 12 weeks
+    aliceVotingPower = await locking.getVotes(alice.address);
+    bobVotingPower = await locking.getVotes(bob.address);
+
+    // alice in slope period(5/10), bob still in cliff period
+    expect(aliceVotingPower).to.eq(aliceCalculatedVotingPower / 2n);
+    expect(bobVotingPower).to.eq(bobCalculatedVotingPower);
+
+    // withdraw in slope period
+    // should transfer mento from locking to alice
+    await expect(locking.connect(alice).withdraw()).to.changeTokenBalances(
+      mentoToken,
+      [alice, locking],
+      [initialBalance / 2n, -initialBalance / 2n],
+    );
+    await expect(locking.connect(bob).withdraw()).to.changeTokenBalances(
+      mentoToken,
+      [bob, locking],
+      [0, 0],
+    );
+
+    await timeTravel(42); // 12 weeks + 6 weeks = 18 weeks
+    aliceVotingPower = await locking.getVotes(alice.address);
+    bobVotingPower = await locking.getVotes(bob.address);
+
+    // alice fully unlocked, bob in slope period(6/11)
+    expect(aliceVotingPower).to.eq(0);
+    expect(bobVotingPower).to.closeTo(
+      (bobCalculatedVotingPower * 6n) / 11n,
+      10n,
+    );
+
+    // withdraw in after slope for alice, and in slope for bob
+    // should transfer mento from locking to both alice and bob
+    await expect(locking.connect(alice).withdraw()).to.changeTokenBalances(
+      mentoToken,
+      [alice, locking],
+      [initialBalance / 2n, -initialBalance / 2n],
+    );
+
+    const bobMentoBalanceBefore = await mentoToken.balanceOf(bob.address);
+    await locking.connect(bob).withdraw();
+    const bobMentoBalanceAfter = await mentoToken.balanceOf(bob.address);
+    expect(bobMentoBalanceAfter - bobMentoBalanceBefore).to.closeTo(
+      (initialBalance * 5n) / 22n,
+      10n,
+    );
+
+    await timeTravel(42); // 18 weeks + 6 weeks = 24 weeks
+
+    await locking.connect(bob).withdraw();
+
+    aliceVotingPower = await locking.getVotes(alice.address);
+    bobVotingPower = await locking.getVotes(bob.address);
+    const aliceFinalMentoBalance = await mentoToken.balanceOf(alice.address);
+    const bobFinalMentoBalance = await mentoToken.balanceOf(bob.address);
+
+    expect(aliceFinalMentoBalance).to.eq(initialBalance);
+    expect(bobFinalMentoBalance).to.eq(initialBalance);
+    expect(aliceVotingPower).to.eq(0);
+    expect(bobVotingPower).to.eq(0);
+  });
+
   it('should delegate created locks', async function () {
     await locking
       .connect(alice)
@@ -150,31 +277,86 @@ describe.only('Locking', function () {
         calculateVotingPower(initialBalance, 10n, 7n),
     );
   });
+
+  it('should relock with longer duration', async function () {
+    const currentLockId = await locking.counter();
+
+    await locking
+      .connect(alice)
+      .lock(alice.address, alice.address, initialBalance, 10, 7);
+
+    await locking
+      .connect(bob)
+      .lock(bob.address, bob.address, initialBalance / 2n, 11, 13);
+
+    await timeTravel(21); // 3 weeks
+
+    await locking
+      .connect(alice)
+      .relock(currentLockId + 1n, alice.address, initialBalance, 20, 15);
+
+    await expect(
+      locking
+        .connect(bob)
+        .relock(currentLockId + 2n, bob.address, initialBalance / 2n, 5, 13),
+    ).to.be.revertedWith('new line period lock too short');
+
+    await expect(
+      locking
+        .connect(bob)
+        .relock(currentLockId + 2n, bob.address, initialBalance / 2n, 10, 9),
+    ).to.be.revertedWith('new line period lock too short');
+
+    locking
+      .connect(bob)
+      .relock(currentLockId + 2n, bob.address, initialBalance / 2n, 10, 12);
+
+    const aliceVotingPower = await locking.getVotes(alice.address);
+    const bobVotingPower = await locking.getVotes(bob.address);
+
+    expect(aliceVotingPower).to.eq(
+      calculateVotingPower(initialBalance, 20n, 15n),
+    );
+    expect(bobVotingPower).to.eq(
+      calculateVotingPower(initialBalance / 2n, 10n, 12n),
+    );
+  });
+
+  it('should relock with larger amount', async function () {
+    const currentLockId = await locking.counter();
+
+    await locking
+      .connect(alice)
+      .lock(alice.address, alice.address, (initialBalance * 2n) / 3n, 10, 7);
+
+    await locking
+      .connect(bob)
+      .lock(bob.address, bob.address, initialBalance / 2n, 11, 13);
+
+    await timeTravel(21); // 3 weeks
+
+    await locking
+      .connect(alice)
+      .relock(currentLockId + 1n, alice.address, initialBalance, 10, 4);
+
+    await expect(
+      locking
+        .connect(bob)
+        .relock(currentLockId + 2n, bob.address, initialBalance / 4n, 11, 10),
+    ).to.be.revertedWith('Impossible to relock: less amount, then now is');
+
+    locking
+      .connect(bob)
+      .relock(currentLockId + 2n, bob.address, initialBalance, 11, 10);
+
+    const aliceVotingPower = await locking.getVotes(alice.address);
+    const bobVotingPower = await locking.getVotes(bob.address);
+
+    expect(aliceVotingPower).to.eq(
+      calculateVotingPower(initialBalance, 10n, 4n),
+    );
+    expect(bobVotingPower).to.eq(
+      calculateVotingPower(initialBalance, 11n, 10n),
+    );
+  });
 });
-
-function calculateVotingPower(
-  tokens: bigint,
-  slopePeriod: bigint,
-  cliffPeriod: bigint,
-): bigint {
-  const ST_FORMULA_CONST_MULTIPLIER = 2n * 10n ** 7n; // Example conversion
-  const ST_FORMULA_CLIFF_MULTIPLIER = 8n * 10n ** 7n;
-  const ST_FORMULA_SLOPE_MULTIPLIER = 4n * 10n ** 7n;
-  const ST_FORMULA_DIVIDER = 1n * 10n ** 8n;
-  const MAX_CLIFF_PERIOD = 103n;
-  const MAX_SLOPE_PERIOD = 104n;
-  const MIN_CLIFF_PERIOD = 0n;
-  const MIN_SLOPE_PERIOD = 1n;
-
-  // Arithmetic operations using BigInt directly
-  const amount =
-    (tokens *
-      (ST_FORMULA_CONST_MULTIPLIER +
-        (ST_FORMULA_CLIFF_MULTIPLIER * (cliffPeriod - MIN_CLIFF_PERIOD)) /
-          (MAX_CLIFF_PERIOD - MIN_CLIFF_PERIOD) +
-        (ST_FORMULA_SLOPE_MULTIPLIER * (slopePeriod - MIN_SLOPE_PERIOD)) /
-          (MAX_SLOPE_PERIOD - MIN_SLOPE_PERIOD))) /
-    ST_FORMULA_DIVIDER;
-
-  return amount;
-}
