@@ -1,9 +1,6 @@
 import { expect } from 'chai';
 import hre, { ethers } from 'hardhat';
-import {
-  ContractAddresses,
-  addresses as MentoAddresses,
-} from '@mento-protocol/mento-sdk';
+import * as mento from '@mento-protocol/mento-sdk';
 
 import * as helpers from '@nomicfoundation/hardhat-toolbox/network-helpers';
 import { HardhatEthersSigner } from '@nomicfoundation/hardhat-ethers/signers';
@@ -18,7 +15,7 @@ import { calculateVotingPower, timeTravel } from './utils/utils';
 describe('Locking', function () {
   const { provider, parseEther, MaxUint256 } = ethers;
 
-  let governanceAddresses: ContractAddresses;
+  let governanceAddresses: mento.ContractAddresses;
   let mentoToken: MentoToken;
   let locking: Locking;
   let alice: HardhatEthersSigner;
@@ -56,7 +53,7 @@ describe('Locking', function () {
       [alice, bob] = signers;
     }
 
-    governanceAddresses = MentoAddresses[chainId]!;
+    governanceAddresses = mento.addresses[chainId]!;
     if (!governanceAddresses) {
       throw new Error('Governance addresses not found for this chain');
     }

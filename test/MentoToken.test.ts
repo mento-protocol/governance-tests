@@ -1,10 +1,6 @@
 import { expect } from 'chai';
 import hre, { ethers } from 'hardhat';
-import {
-  ContractAddresses,
-  addresses as MentoAddresses,
-} from '@mento-protocol/mento-sdk';
-
+import * as mento from '@mento-protocol/mento-sdk';
 import * as helpers from '@nomicfoundation/hardhat-toolbox/network-helpers';
 
 import { MentoToken, MentoToken__factory } from '@mento-protocol/mento-core-ts';
@@ -12,7 +8,7 @@ import { MentoToken, MentoToken__factory } from '@mento-protocol/mento-core-ts';
 describe('Mento Token', function () {
   const { provider, parseEther } = ethers;
 
-  let governanceAddresses: ContractAddresses;
+  let governanceAddresses: mento.ContractAddresses;
   let mentoToken: MentoToken;
 
   beforeEach(async function () {
@@ -27,7 +23,7 @@ describe('Mento Token', function () {
       throw new Error('Chain ID not found');
     }
 
-    governanceAddresses = MentoAddresses[chainId]!;
+    governanceAddresses = mento.addresses[chainId]!;
     if (!governanceAddresses) {
       throw new Error('Governance addresses not found for this chain');
     }
