@@ -12,6 +12,8 @@ import {
   MentoGovernor__factory,
   TimelockController,
   TimelockController__factory,
+  GovernanceFactory,
+  GovernanceFactory__factory,
 } from '@mento-protocol/mento-core-ts';
 import { calculateVotingPower, timeTravel } from './utils/utils';
 import { EventLog, toUtf8Bytes } from 'ethers';
@@ -24,6 +26,7 @@ describe('Governance', function () {
   let locking: Locking;
   let governor: MentoGovernor;
   let timelock: TimelockController;
+  let governanceFactory: GovernanceFactory;
   let alice: HardhatEthersSigner;
   let bob: HardhatEthersSigner;
   let charlie: HardhatEthersSigner;
@@ -98,8 +101,14 @@ describe('Governance', function () {
       governanceAddresses.MentoGovernor,
       provider as any,
     );
+
     timelock = TimelockController__factory.connect(
       governanceAddresses.TimelockController,
+      provider as any,
+    );
+
+    governanceFactory = GovernanceFactory__factory.connect(
+      governanceAddresses.GovernanceFactory,
       provider as any,
     );
 
@@ -108,10 +117,7 @@ describe('Governance', function () {
     console.log('========================\r\n');
   });
 
-  it.only('should transfer tokens from treasury', async function () {
-    // Execute the proposal
-    // Tokens should be transferred to the target account
-    // Create a proposal to transfer some tokens from the treasury
+  it('should transfer tokens from treasury', async function () {
     const amountToTransfer = parseEther('1000000');
     const target = david.address;
     const description = 'Transfer 1m tokens to David';
@@ -205,5 +211,83 @@ describe('Governance', function () {
       [david, timelock],
       [amountToTransfer, -amountToTransfer],
     );
+  });
+
+  it.only('should cancel a queued proposal', async function () {
+    const amountToTransfer = parseEther('1000000');
+    const target = david.address;
+    const description = 'Transfer 1m tokens to David';
+
+    const calldata = mentoToken.interface.encodeFunctionData('transfer', [
+      target,
+      amountToTransfer,
+    ]);
+
+    // Create a proposal to transfer tokens from the treasury
+    const tx = await governor
+      .connect(alice)
+      .propose([governanceAddresses.MentoToken], [0], [calldata], description);
+
+    // Get the proposalId from the event logs
+    const receipt = await tx.wait();
+    const proposalCreatedEvent = receipt.logs.find(
+      (e: EventLog) => e.fragment.name === 'ProposalCreated',
+    );
+
+    const proposalId = proposalCreatedEvent.args[0];
+
+    // Vote on the proposal using multiple accounts, with the majority voting YES
+    await governor.connect(alice).castVote(proposalId, 1);
+    await governor.connect(bob).castVote(proposalId, 1);
+    await governor.connect(charlie).castVote(proposalId, 0);
+
+    // Voting period of 7 days
+    await timeTravel(7);
+
+    // Proposal ready for queue
+    governor
+      .connect(alice)
+      .queue(
+        [governanceAddresses.MentoToken],
+        [0],
+        [calldata],
+        ethers.keccak256(toUtf8Bytes(description)),
+      );
+
+    const timelockId = timelock.hashOperationBatch(
+      [governanceAddresses.MentoToken],
+      [0],
+      [calldata],
+      ethers.ZeroHash,
+      ethers.keccak256(toUtf8Bytes(description)),
+    );
+
+    // only the canceller can cancel the proposal
+    const cancellerRole = await timelock.CANCELLER_ROLE();
+    await expect(timelock.connect(alice).cancel(timelockId)).to.be.revertedWith(
+      `AccessControl: account ${alice.address.toLowerCase()} is missing role ${cancellerRole}`,
+    );
+
+    const watchdogAddress = await governanceFactory.watchdogMultiSig();
+    const watchdog = await ethers.getImpersonatedSigner(watchdogAddress);
+
+    expect(await timelock.isOperationPending(timelockId)).to.be.true;
+    // watchdog can cancel the proposal
+    await timelock.connect(watchdog).cancel(timelockId);
+    expect(await timelock.isOperationPending(timelockId)).to.be.false;
+
+    await timeTravel(3);
+
+    // Proposal can not be executed after being cancelled
+    await expect(
+      governor
+        .connect(alice)
+        .execute(
+          [governanceAddresses.MentoToken],
+          [0],
+          [calldata],
+          ethers.keccak256(toUtf8Bytes(description)),
+        ),
+    ).to.be.revertedWith('Governor: proposal not successful');
   });
 });
