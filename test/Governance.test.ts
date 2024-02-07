@@ -14,7 +14,7 @@ import {
   TimelockController__factory,
 } from '@mento-protocol/mento-core-ts';
 import { calculateVotingPower, timeTravel } from './utils/utils';
-import { EventLog } from 'ethers';
+import { EventLog, toUtf8Bytes } from 'ethers';
 
 describe('Governance', function () {
   const { provider, parseEther, MaxUint256, AbiCoder } = ethers;
@@ -109,7 +109,6 @@ describe('Governance', function () {
   });
 
   it.only('should transfer tokens from treasury', async function () {
-    // Queue the proposal
     // Execute the proposal
     // Tokens should be transferred to the target account
     // Create a proposal to transfer some tokens from the treasury
@@ -151,21 +150,60 @@ describe('Governance', function () {
     await governor.connect(bob).castVote(proposalId, 1);
     await governor.connect(charlie).castVote(proposalId, 0);
 
-    // Queue the proposal
-    // await governance.connect(proposer).queue(proposalId);
+    // Proposal not yet ready for queue
+    await expect(
+      governor
+        .connect(alice)
+        .queue(
+          [governanceAddresses.MentoToken],
+          [0],
+          [calldata],
+          ethers.keccak256(toUtf8Bytes(description)),
+        ),
+    ).to.be.revertedWith('Governor: proposal not successful');
 
-    // // Advance time if necessary (depends on your contract's rules for when a proposal can be executed)
-    // // await ethers.provider.send('evm_increaseTime', [timeToAdvance]);
+    // Voting period of 7 days
+    await timeTravel(7);
 
-    // // Execute the proposal
-    // await governance.connect(proposer).execute(proposalId);
+    // Proposal ready for queue
+    governor
+      .connect(alice)
+      .queue(
+        [governanceAddresses.MentoToken],
+        [0],
+        [calldata],
+        ethers.keccak256(toUtf8Bytes(description)),
+      );
 
-    // // Tokens should be transferred to the target account
-    // const targetBalance = await token.balanceOf(target.address);
-    // assert.equal(
-    //   targetBalance.toString(),
-    //   amountToTransfer.toString(),
-    //   'Tokens were not transferred correctly',
-    // );
+    // Proposal not yet ready for execution
+    await expect(
+      governor
+        .connect(alice)
+        .execute(
+          [governanceAddresses.MentoToken],
+          [0],
+          [calldata],
+          ethers.keccak256(toUtf8Bytes(description)),
+        ),
+    ).to.be.revertedWith('TimelockController: operation is not ready');
+
+    // Timelock period of 2 days
+    await timeTravel(3);
+
+    // Executing proposal transfers tokens from treasury to target account
+    await expect(
+      governor
+        .connect(alice)
+        .execute(
+          [governanceAddresses.MentoToken],
+          [0],
+          [calldata],
+          ethers.keccak256(toUtf8Bytes(description)),
+        ),
+    ).to.changeTokenBalances(
+      mentoToken,
+      [david, timelock],
+      [amountToTransfer, -amountToTransfer],
+    );
   });
 });
