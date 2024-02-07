@@ -1,6 +1,10 @@
 import { expect } from 'chai';
 import hre, { ethers } from 'hardhat';
-import * as mento from '@mento-protocol/mento-sdk';
+import {
+  ContractAddresses,
+  addresses as MentoAddresses,
+} from '@mento-protocol/mento-sdk';
+
 import * as helpers from '@nomicfoundation/hardhat-toolbox/network-helpers';
 import { HardhatEthersSigner } from '@nomicfoundation/hardhat-ethers/signers';
 import {
@@ -14,7 +18,7 @@ import { calculateVotingPower, timeTravel } from './utils/utils';
 describe('Locking', function () {
   const { provider, parseEther, MaxUint256 } = ethers;
 
-  let governanceAddresses: mento.ContractAddresses;
+  let governanceAddresses: ContractAddresses;
   let mentoToken: MentoToken;
   let locking: Locking;
   let alice: HardhatEthersSigner;
@@ -25,7 +29,6 @@ describe('Locking', function () {
     // reset the fork state between tests to not pollute the state
     // @ts-expect-error - forking doesn't exist in hre for some reason
     await helpers.reset(hre.network.config.forking.url);
-
     const treasury = await ethers.getImpersonatedSigner(
       governanceAddresses.TimelockController,
     );
@@ -53,7 +56,7 @@ describe('Locking', function () {
       [alice, bob] = signers;
     }
 
-    governanceAddresses = mento.getContractsByChainId(chainId);
+    governanceAddresses = MentoAddresses[chainId]!;
     if (!governanceAddresses) {
       throw new Error('Governance addresses not found for this chain');
     }
