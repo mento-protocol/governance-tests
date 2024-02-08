@@ -23,7 +23,7 @@ describe('Mento Token', function () {
       throw new Error('Chain ID not found');
     }
 
-    governanceAddresses = mento.getContractsByChainId(chainId);
+    governanceAddresses = mento.addresses[chainId]!;
     if (!governanceAddresses) {
       throw new Error('Governance addresses not found for this chain');
     }

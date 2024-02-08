@@ -6,11 +6,11 @@ settings:
 
 devDependencies:
   '@mento-protocol/mento-core-ts':
-    specifier: ^0.2.1
+    specifier: 0.2.1
     version: 0.2.1
   '@mento-protocol/mento-sdk':
-    specifier: ^0.2.1
-    version: 0.2.1(ethers@6.10.0)
+    specifier: 0.2.3
+    version: 0.2.3(ethers@6.10.0)
   '@nomicfoundation/hardhat-chai-matchers':
     specifier: ^2.0.3
     version: 2.0.3(@nomicfoundation/hardhat-ethers@3.0.5)(chai@4.2.0)(ethers@6.10.0)(hardhat@2.19.4)
@@ -533,8 +533,8 @@ packages:
     resolution: {integrity: sha512-p99LMVVZ7VEHgirdjgUjDH1HA9810c8z+i0EzcgTPBK8TjkGY47aV2DDWknjETcjIYfXek7V/GYhwdjeKoqEbw==}
     dev: true
 
-  /@mento-protocol/mento-sdk@0.2.1(ethers@6.10.0):
-    resolution: {integrity: sha512-qXpBtzLud0jQEUEF/P9R6a4hE3vh6IqEyTOd69jKkyelNQPnbtb67AbQOh0/VBJlir7XOJmEpvKMcD8FahSJHg==}
+  /@mento-protocol/mento-sdk@0.2.3(ethers@6.10.0):
+    resolution: {integrity: sha512-Rf/RBAW5+gekHWoAeNPuN1G3JbiDNEfN5QvInDvpy5JQKhqXC0ZuH7N5ja/D7ziEnY912rBGyylE1QP/H1toCA==}
     engines: {node: '>=14'}
     peerDependencies:
       ethers: ^5.7
