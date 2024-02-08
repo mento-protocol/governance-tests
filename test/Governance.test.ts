@@ -15,11 +15,11 @@ import {
   GovernanceFactory,
   GovernanceFactory__factory,
 } from '@mento-protocol/mento-core-ts';
-import { calculateVotingPower, timeTravel } from './utils/utils';
+import { timeTravel } from './utils/utils';
 import { EventLog, toUtf8Bytes } from 'ethers';
 
 describe('Governance', function () {
-  const { provider, parseEther, MaxUint256, AbiCoder } = ethers;
+  const { provider, parseEther, MaxUint256 } = ethers;
 
   let governanceAddresses: mento.ContractAddresses;
   let mentoToken: MentoToken;
@@ -80,7 +80,7 @@ describe('Governance', function () {
       [alice, bob, charlie, david] = signers;
     }
 
-    governanceAddresses = mento.getContractsByChainId(chainId);
+    governanceAddresses = mento.addresses[chainId]!;
     if (!governanceAddresses) {
       throw new Error('Governance addresses not found for this chain');
     }
