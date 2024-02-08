@@ -18,7 +18,7 @@ import {
 import { timeTravel } from './utils/utils';
 import { EventLog, toUtf8Bytes } from 'ethers';
 
-describe('Governance', function () {
+describe.only('Governance', function () {
   const { provider, parseEther, MaxUint256 } = ethers;
 
   let governanceAddresses: mento.ContractAddresses;
@@ -172,7 +172,7 @@ describe('Governance', function () {
     await timeTravel(7);
 
     // Proposal ready for queue
-    governor
+    await governor
       .connect(alice)
       .queue(
         [governanceAddresses.MentoToken],
@@ -194,7 +194,7 @@ describe('Governance', function () {
     ).to.be.revertedWith('TimelockController: operation is not ready');
 
     // Timelock period of 2 days
-    await timeTravel(3);
+    await timeTravel(2);
 
     // Executing proposal transfers tokens from treasury to target account
     await expect(
@@ -213,7 +213,7 @@ describe('Governance', function () {
     );
   });
 
-  it.only('should cancel a queued proposal', async function () {
+  it('should cancel a queued proposal', async function () {
     const amountToTransfer = parseEther('1000000');
     const target = david.address;
     const description = 'Transfer 1m tokens to David';
@@ -245,7 +245,7 @@ describe('Governance', function () {
     await timeTravel(7);
 
     // Proposal ready for queue
-    governor
+    await governor
       .connect(alice)
       .queue(
         [governanceAddresses.MentoToken],
@@ -276,7 +276,7 @@ describe('Governance', function () {
     await timelock.connect(watchdog).cancel(timelockId);
     expect(await timelock.isOperationPending(timelockId)).to.be.false;
 
-    await timeTravel(3);
+    await timeTravel(2);
 
     // Proposal can not be executed after being cancelled
     await expect(
@@ -289,5 +289,168 @@ describe('Governance', function () {
           ethers.keccak256(toUtf8Bytes(description)),
         ),
     ).to.be.revertedWith('Governor: proposal not successful');
+  });
+
+  it('should defeat a proposal', async function () {
+    const amountToTransfer = parseEther('1000000');
+    const target = david.address;
+    const description = 'Transfer 1m tokens to David';
+
+    const calldata = mentoToken.interface.encodeFunctionData('transfer', [
+      target,
+      amountToTransfer,
+    ]);
+
+    // Create a proposal to transfer tokens from the treasury
+    const tx = await governor
+      .connect(alice)
+      .propose([governanceAddresses.MentoToken], [0], [calldata], description);
+
+    // Get the proposalId from the event logs
+    const receipt = await tx.wait();
+    const proposalCreatedEvent = receipt.logs.find(
+      (e: EventLog) => e.fragment.name === 'ProposalCreated',
+    );
+
+    const proposalId = proposalCreatedEvent.args[0];
+
+    // Vote on the proposal using multiple accounts, with the majority voting NO
+    await governor.connect(alice).castVote(proposalId, 0);
+    await governor.connect(bob).castVote(proposalId, 1);
+    await governor.connect(charlie).castVote(proposalId, 0);
+
+    expect(await governor.state(proposalId)).to.equal(1); // active
+
+    // Voting period of 7 days
+    await timeTravel(7);
+    expect(await governor.state(proposalId)).to.equal(3); // defeated
+
+    // Proposal is defeated and cant be queued
+    await expect(
+      governor
+        .connect(alice)
+        .queue(
+          [governanceAddresses.MentoToken],
+          [0],
+          [calldata],
+          ethers.keccak256(toUtf8Bytes(description)),
+        ),
+    ).to.be.revertedWith('Governor: proposal not successful');
+
+    await timeTravel(2);
+
+    expect(await governor.state(proposalId)).to.equal(3); // defeated
+
+    // Proposal can not be executed after being defeated
+    await expect(
+      governor
+        .connect(alice)
+        .execute(
+          [governanceAddresses.MentoToken],
+          [0],
+          [calldata],
+          ethers.keccak256(toUtf8Bytes(description)),
+        ),
+    ).to.be.revertedWith('Governor: proposal not successful');
+  });
+
+  it('changes governor config', async function () {
+    const newVotingDelay = 17_280; // 1 day in CELO
+    const newVotingPeriod = 2 * 120_960; // 2 weeks in CELO
+    const newThreshold = parseEther('5000');
+    const newQuorum = 10; // 10%
+    const newMinDelay = 3 * 86400; // 2 days
+    const newMinCliff = 6; // 6 weeks
+    const newMinSlope = 12; // 12 weeks
+    const targets = [
+      governanceAddresses.MentoGovernor,
+      governanceAddresses.MentoGovernor,
+      governanceAddresses.MentoGovernor,
+      governanceAddresses.MentoGovernor,
+      governanceAddresses.TimelockController,
+      governanceAddresses.Locking,
+      governanceAddresses.Locking,
+    ];
+    const values = Array(7).fill(0);
+    const calldatas = [];
+    const description = 'Change governor config';
+
+    calldatas.push(
+      governor.interface.encodeFunctionData('setVotingDelay', [newVotingDelay]),
+    );
+    calldatas.push(
+      governor.interface.encodeFunctionData('setVotingPeriod', [
+        newVotingPeriod,
+      ]),
+    );
+    calldatas.push(
+      governor.interface.encodeFunctionData('setProposalThreshold', [
+        newThreshold,
+      ]),
+    );
+    calldatas.push(
+      governor.interface.encodeFunctionData('updateQuorumNumerator', [
+        newQuorum,
+      ]),
+    );
+    calldatas.push(
+      timelock.interface.encodeFunctionData('updateDelay', [newMinDelay]),
+    );
+    calldatas.push(
+      locking.interface.encodeFunctionData('setMinCliffPeriod', [newMinCliff]),
+    );
+    calldatas.push(
+      locking.interface.encodeFunctionData('setMinSlopePeriod', [newMinSlope]),
+    );
+
+    // Create a proposal to transfer tokens from the treasury
+    const tx = await governor
+      .connect(alice)
+      .propose(targets, values, calldatas, description);
+
+    // Get the proposalId from the event logs
+    const receipt = await tx.wait();
+    const proposalCreatedEvent = receipt.logs.find(
+      (e: EventLog) => e.fragment.name === 'ProposalCreated',
+    );
+
+    const proposalId = proposalCreatedEvent.args[0];
+
+    // Vote on the proposal using multiple accounts, with the majority voting NO
+    await governor.connect(alice).castVote(proposalId, 0);
+    await governor.connect(bob).castVote(proposalId, 1);
+    await governor.connect(charlie).castVote(proposalId, 1);
+
+    // Voting period
+    await timeTravel(7);
+
+    await governor
+      .connect(alice)
+      .queue(
+        targets,
+        values,
+        calldatas,
+        ethers.keccak256(toUtf8Bytes(description)),
+      );
+
+    // Timelock period
+    await timeTravel(2);
+
+    await governor
+      .connect(alice)
+      .execute(
+        targets,
+        values,
+        calldatas,
+        ethers.keccak256(toUtf8Bytes(description)),
+      );
+
+    expect(await governor.votingDelay()).to.eq(newVotingDelay);
+    expect(await governor.votingPeriod()).to.eq(newVotingPeriod);
+    expect(await governor.proposalThreshold()).to.eq(newThreshold);
+    expect(await governor.quorumNumerator()).to.eq(newQuorum);
+    expect(await timelock.getMinDelay()).to.eq(newMinDelay);
+    expect(await locking.minCliffPeriod()).to.eq(newMinCliff);
+    expect(await locking.minSlopePeriod()).to.eq(newMinSlope);
   });
 });
