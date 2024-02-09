@@ -18,7 +18,7 @@ import {
 import { timeTravel } from './utils/utils';
 import { EventLog, toUtf8Bytes } from 'ethers';
 
-describe.only('Governance', function () {
+describe('Governance', function () {
   const { provider, parseEther, MaxUint256 } = ethers;
 
   let governanceAddresses: mento.ContractAddresses;
@@ -452,5 +452,106 @@ describe.only('Governance', function () {
     expect(await timelock.getMinDelay()).to.eq(newMinDelay);
     expect(await locking.minCliffPeriod()).to.eq(newMinCliff);
     expect(await locking.minSlopePeriod()).to.eq(newMinSlope);
+  });
+
+  it('changes governor roles', async function () {
+    const proposerRole = await timelock.PROPOSER_ROLE();
+    const cancellerRole = await timelock.CANCELLER_ROLE();
+
+    const newProposer = alice.address;
+    const newCanceller = charlie.address;
+    const watchdogAddress = await governanceFactory.watchdogMultiSig();
+
+    const targets = [
+      governanceAddresses.TimelockController,
+      governanceAddresses.TimelockController,
+      governanceAddresses.TimelockController,
+      governanceAddresses.TimelockController,
+    ];
+    const values = Array(4).fill(0);
+    const calldatas = [];
+    const description = 'Change governor roles';
+
+    calldatas.push(
+      timelock.interface.encodeFunctionData('grantRole', [
+        proposerRole,
+        newProposer,
+      ]),
+    );
+
+    calldatas.push(
+      timelock.interface.encodeFunctionData('grantRole', [
+        cancellerRole,
+        newCanceller,
+      ]),
+    );
+    calldatas.push(
+      timelock.interface.encodeFunctionData('revokeRole', [
+        proposerRole,
+        governanceAddresses.MentoGovernor,
+      ]),
+    );
+    calldatas.push(
+      timelock.interface.encodeFunctionData('revokeRole', [
+        cancellerRole,
+        watchdogAddress,
+      ]),
+    );
+
+    // Create a proposal to transfer tokens from the treasury
+    const tx = await governor
+      .connect(alice)
+      .propose(targets, values, calldatas, description);
+
+    // Get the proposalId from the event logs
+    const receipt = await tx.wait();
+    const proposalCreatedEvent = receipt.logs.find(
+      (e: EventLog) => e.fragment.name === 'ProposalCreated',
+    );
+
+    const proposalId = proposalCreatedEvent.args[0];
+
+    // Vote on the proposal using multiple accounts, with the majority voting NO
+    await governor.connect(alice).castVote(proposalId, 0);
+    await governor.connect(bob).castVote(proposalId, 1);
+    await governor.connect(charlie).castVote(proposalId, 1);
+
+    // Voting period
+    await timeTravel(7);
+
+    await governor
+      .connect(alice)
+      .queue(
+        targets,
+        values,
+        calldatas,
+        ethers.keccak256(toUtf8Bytes(description)),
+      );
+
+    // Timelock period
+    await timeTravel(2);
+
+    expect(await timelock.hasRole(proposerRole, newProposer)).to.be.false;
+    expect(await timelock.hasRole(cancellerRole, newCanceller)).to.be.false;
+    expect(
+      await timelock.hasRole(proposerRole, governanceAddresses.MentoGovernor),
+    ).to.be.true;
+    expect(await timelock.hasRole(cancellerRole, watchdogAddress)).to.be.true;
+
+    await governor
+      .connect(alice)
+      .execute(
+        targets,
+        values,
+        calldatas,
+        ethers.keccak256(toUtf8Bytes(description)),
+      );
+
+    expect(await timelock.hasRole(proposerRole, newProposer)).to.be.true;
+    expect(await timelock.hasRole(cancellerRole, newCanceller)).to.be.true;
+    expect(
+      await timelock.hasRole(proposerRole, governanceAddresses.MentoGovernor),
+    ).to.be.false;
+    expect(await timelock.hasRole(cancellerRole, watchdogAddress)).to.be.false;
   });
 });
