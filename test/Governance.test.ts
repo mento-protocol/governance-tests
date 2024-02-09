@@ -113,39 +113,18 @@ describe('Governance', function () {
 
     // Proposal not yet ready for queue
     await expect(
-      governor
-        .connect(alice)
-        .queue(
-          [governanceAddresses.MentoToken],
-          [0],
-          [calldata],
-          keccak256(toUtf8Bytes(description)),
-        ),
+      governor.connect(alice)['queue(uint256)'](proposalId),
     ).to.be.revertedWith('Governor: proposal not successful');
 
     // Voting period of 7 days
     await timeTravel(7);
 
     // Proposal ready for queue
-    await governor
-      .connect(alice)
-      .queue(
-        [governanceAddresses.MentoToken],
-        [0],
-        [calldata],
-        keccak256(toUtf8Bytes(description)),
-      );
+    await governor.connect(alice)['queue(uint256)'](proposalId);
 
     // Proposal not yet ready for execution
     await expect(
-      governor
-        .connect(alice)
-        .execute(
-          [governanceAddresses.MentoToken],
-          [0],
-          [calldata],
-          keccak256(toUtf8Bytes(description)),
-        ),
+      governor.connect(alice)['execute(uint256)'](proposalId),
     ).to.be.revertedWith('TimelockController: operation is not ready');
 
     // Timelock period of 2 days
@@ -153,14 +132,7 @@ describe('Governance', function () {
 
     // Executing proposal transfers tokens from treasury to target account
     await expect(
-      governor
-        .connect(alice)
-        .execute(
-          [governanceAddresses.MentoToken],
-          [0],
-          [calldata],
-          keccak256(toUtf8Bytes(description)),
-        ),
+      governor.connect(alice)['execute(uint256)'](proposalId),
     ).to.changeTokenBalances(
       mentoToken,
       [david, timelock],
@@ -196,14 +168,7 @@ describe('Governance', function () {
     await timeTravel(7);
 
     // Proposal ready for queue
-    await governor
-      .connect(alice)
-      .queue(
-        [governanceAddresses.MentoToken],
-        [0],
-        [calldata],
-        keccak256(toUtf8Bytes(description)),
-      );
+    await governor.connect(alice)['queue(uint256)'](proposalId);
 
     const timelockId = timelock.hashOperationBatch(
       [governanceAddresses.MentoToken],
@@ -231,14 +196,7 @@ describe('Governance', function () {
 
     // Proposal can not be executed after being cancelled
     await expect(
-      governor
-        .connect(alice)
-        .execute(
-          [governanceAddresses.MentoToken],
-          [0],
-          [calldata],
-          keccak256(toUtf8Bytes(description)),
-        ),
+      governor.connect(alice)['execute(uint256)'](proposalId),
     ).to.be.revertedWith('Governor: proposal not successful');
   });
 
@@ -274,14 +232,7 @@ describe('Governance', function () {
 
     // Proposal is defeated and cant be queued
     await expect(
-      governor
-        .connect(alice)
-        .queue(
-          [governanceAddresses.MentoToken],
-          [0],
-          [calldata],
-          keccak256(toUtf8Bytes(description)),
-        ),
+      governor.connect(alice)['queue(uint256)'](proposalId),
     ).to.be.revertedWith('Governor: proposal not successful');
 
     await timeTravel(2);
@@ -290,14 +241,7 @@ describe('Governance', function () {
 
     // Proposal can not be executed after being defeated
     await expect(
-      governor
-        .connect(alice)
-        .execute(
-          [governanceAddresses.MentoToken],
-          [0],
-          [calldata],
-          keccak256(toUtf8Bytes(description)),
-        ),
+      governor.connect(alice)['execute(uint256)'](proposalId),
     ).to.be.revertedWith('Governor: proposal not successful');
   });
 
@@ -367,21 +311,17 @@ describe('Governance', function () {
     // Voting period
     await timeTravel(7);
 
-    await governor
-      .connect(alice)
-      .queue(targets, values, calldatas, keccak256(toUtf8Bytes(description)));
+    await governor.connect(alice)['queue(uint256)'](proposalId);
 
     // Timelock period
     await timeTravel(2);
 
-    await governor
-      .connect(alice)
-      .execute(targets, values, calldatas, keccak256(toUtf8Bytes(description)));
+    await governor.connect(alice)['execute(uint256)'](proposalId);
 
     expect(await governor.votingDelay()).to.eq(newVotingDelay);
     expect(await governor.votingPeriod()).to.eq(newVotingPeriod);
     expect(await governor.proposalThreshold()).to.eq(newThreshold);
-    expect(await governor.quorumNumerator()).to.eq(newQuorum);
+    expect(await governor['quorumNumerator()']()).to.eq(newQuorum);
     expect(await timelock.getMinDelay()).to.eq(newMinDelay);
     expect(await locking.minCliffPeriod()).to.eq(newMinCliff);
     expect(await locking.minSlopePeriod()).to.eq(newMinSlope);
@@ -448,9 +388,7 @@ describe('Governance', function () {
     // Voting period
     await timeTravel(7);
 
-    await governor
-      .connect(alice)
-      .queue(targets, values, calldatas, keccak256(toUtf8Bytes(description)));
+    await governor.connect(alice)['queue(uint256)'](proposalId);
 
     // Timelock period
     await timeTravel(2);
@@ -462,9 +400,7 @@ describe('Governance', function () {
     ).to.be.true;
     expect(await timelock.hasRole(cancellerRole, watchdogAddress)).to.be.true;
 
-    await governor
-      .connect(alice)
-      .execute(targets, values, calldatas, keccak256(toUtf8Bytes(description)));
+    await governor.connect(alice)['execute(uint256)'](proposalId);
 
     expect(await timelock.hasRole(proposerRole, newProposer)).to.be.true;
     expect(await timelock.hasRole(cancellerRole, newCanceller)).to.be.true;
@@ -522,9 +458,7 @@ describe('Governance', function () {
     // Voting period
     await timeTravel(7);
 
-    await governor
-      .connect(alice)
-      .queue(targets, values, calldatas, keccak256(toUtf8Bytes(description)));
+    await governor.connect(alice)['queue(uint256)'](proposalId);
 
     // Timelock period
     await timeTravel(2);
@@ -534,9 +468,7 @@ describe('Governance', function () {
     await timelock.getMinDelay();
     await governor.votingDelay();
 
-    await governor
-      .connect(alice)
-      .execute(targets, values, calldatas, keccak256(toUtf8Bytes(description)));
+    await governor.connect(alice)['execute(uint256)'](proposalId);
 
     // new implementations does not implement the functions
     await expect(locking.getWeek()).to.be.revertedWith(
@@ -629,9 +561,11 @@ describe('Governance', function () {
     calldatas: string[],
     description: string,
   ): Promise<bigint> => {
-    const tx = await governor
+    const tx: any = await governor
       .connect(proposalSigner)
-      .propose(targets, values, calldatas, description);
+      [
+        'propose(address[],uint256[],bytes[],string)'
+      ](targets, values, calldatas, description);
     const receipt = await tx.wait();
     const proposalCreatedEvent = receipt.logs.find(
       (e: EventLog) => e.fragment.name === 'ProposalCreated',
