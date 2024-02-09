@@ -15,11 +15,23 @@ import {
   GovernanceFactory,
   GovernanceFactory__factory,
 } from '@mento-protocol/mento-core-ts';
+import { ProxyAdmin } from '../typechain-types/@openzeppelin/contracts/proxy/transparent';
+import { ProxyAdmin__factory } from '../typechain-types/factories/proxy/transparent';
+
 import { timeTravel } from './utils/utils';
 import { EventLog, toUtf8Bytes } from 'ethers';
 
-describe('Governance', function () {
-  const { provider, parseEther, MaxUint256 } = ethers;
+describe.only('Governance', function () {
+  const {
+    provider,
+    parseEther,
+    getSigners,
+    MaxUint256,
+    ZeroHash,
+    keccak256,
+    deployContract,
+    getImpersonatedSigner,
+  } = ethers;
 
   let governanceAddresses: mento.ContractAddresses;
   let mentoToken: MentoToken;
@@ -27,6 +39,7 @@ describe('Governance', function () {
   let governor: MentoGovernor;
   let timelock: TimelockController;
   let governanceFactory: GovernanceFactory;
+  let proxyAdmin: ProxyAdmin;
   let alice: HardhatEthersSigner;
   let bob: HardhatEthersSigner;
   let charlie: HardhatEthersSigner;
@@ -38,7 +51,7 @@ describe('Governance', function () {
     // @ts-expect-error - forking doesn't exist in hre for some reason
     await helpers.reset(hre.network.config.forking.url);
 
-    const treasury = await ethers.getImpersonatedSigner(
+    const treasury = await getImpersonatedSigner(
       governanceAddresses.TimelockController,
     );
     initialBalance = parseEther('1000000');
@@ -75,7 +88,7 @@ describe('Governance', function () {
       throw new Error('Chain ID not found');
     }
 
-    const signers = (await ethers.getSigners()) as HardhatEthersSigner[];
+    const signers = (await getSigners()) as HardhatEthersSigner[];
     if (signers[0] && signers[1] && signers[2] && signers[3]) {
       [alice, bob, charlie, david] = signers;
     }
@@ -109,6 +122,12 @@ describe('Governance', function () {
 
     governanceFactory = GovernanceFactory__factory.connect(
       governanceAddresses.GovernanceFactory,
+      provider as any,
+    );
+
+    const proxyAdminAddress = await governanceFactory.proxyAdmin();
+    proxyAdmin = ProxyAdmin__factory.connect(
+      proxyAdminAddress,
       provider as any,
     );
 
@@ -164,7 +183,7 @@ describe('Governance', function () {
           [governanceAddresses.MentoToken],
           [0],
           [calldata],
-          ethers.keccak256(toUtf8Bytes(description)),
+          keccak256(toUtf8Bytes(description)),
         ),
     ).to.be.revertedWith('Governor: proposal not successful');
 
@@ -178,7 +197,7 @@ describe('Governance', function () {
         [governanceAddresses.MentoToken],
         [0],
         [calldata],
-        ethers.keccak256(toUtf8Bytes(description)),
+        keccak256(toUtf8Bytes(description)),
       );
 
     // Proposal not yet ready for execution
@@ -189,7 +208,7 @@ describe('Governance', function () {
           [governanceAddresses.MentoToken],
           [0],
           [calldata],
-          ethers.keccak256(toUtf8Bytes(description)),
+          keccak256(toUtf8Bytes(description)),
         ),
     ).to.be.revertedWith('TimelockController: operation is not ready');
 
@@ -204,7 +223,7 @@ describe('Governance', function () {
           [governanceAddresses.MentoToken],
           [0],
           [calldata],
-          ethers.keccak256(toUtf8Bytes(description)),
+          keccak256(toUtf8Bytes(description)),
         ),
     ).to.changeTokenBalances(
       mentoToken,
@@ -251,15 +270,15 @@ describe('Governance', function () {
         [governanceAddresses.MentoToken],
         [0],
         [calldata],
-        ethers.keccak256(toUtf8Bytes(description)),
+        keccak256(toUtf8Bytes(description)),
       );
 
     const timelockId = timelock.hashOperationBatch(
       [governanceAddresses.MentoToken],
       [0],
       [calldata],
-      ethers.ZeroHash,
-      ethers.keccak256(toUtf8Bytes(description)),
+      ZeroHash,
+      keccak256(toUtf8Bytes(description)),
     );
 
     // only the canceller can cancel the proposal
@@ -269,7 +288,7 @@ describe('Governance', function () {
     );
 
     const watchdogAddress = await governanceFactory.watchdogMultiSig();
-    const watchdog = await ethers.getImpersonatedSigner(watchdogAddress);
+    const watchdog = await getImpersonatedSigner(watchdogAddress);
 
     expect(await timelock.isOperationPending(timelockId)).to.be.true;
     // watchdog can cancel the proposal
@@ -286,7 +305,7 @@ describe('Governance', function () {
           [governanceAddresses.MentoToken],
           [0],
           [calldata],
-          ethers.keccak256(toUtf8Bytes(description)),
+          keccak256(toUtf8Bytes(description)),
         ),
     ).to.be.revertedWith('Governor: proposal not successful');
   });
@@ -319,11 +338,11 @@ describe('Governance', function () {
     await governor.connect(bob).castVote(proposalId, 1);
     await governor.connect(charlie).castVote(proposalId, 0);
 
-    expect(await governor.state(proposalId)).to.equal(1); // active
+    expect(await governor.state(proposalId)).to.eq(1); // active
 
     // Voting period of 7 days
     await timeTravel(7);
-    expect(await governor.state(proposalId)).to.equal(3); // defeated
+    expect(await governor.state(proposalId)).to.eq(3); // defeated
 
     // Proposal is defeated and cant be queued
     await expect(
@@ -333,13 +352,13 @@ describe('Governance', function () {
           [governanceAddresses.MentoToken],
           [0],
           [calldata],
-          ethers.keccak256(toUtf8Bytes(description)),
+          keccak256(toUtf8Bytes(description)),
         ),
     ).to.be.revertedWith('Governor: proposal not successful');
 
     await timeTravel(2);
 
-    expect(await governor.state(proposalId)).to.equal(3); // defeated
+    expect(await governor.state(proposalId)).to.eq(3); // defeated
 
     // Proposal can not be executed after being defeated
     await expect(
@@ -349,12 +368,12 @@ describe('Governance', function () {
           [governanceAddresses.MentoToken],
           [0],
           [calldata],
-          ethers.keccak256(toUtf8Bytes(description)),
+          keccak256(toUtf8Bytes(description)),
         ),
     ).to.be.revertedWith('Governor: proposal not successful');
   });
 
-  it('changes governor config', async function () {
+  it('it should update governor config', async function () {
     const newVotingDelay = 17_280; // 1 day in CELO
     const newVotingPeriod = 2 * 120_960; // 2 weeks in CELO
     const newThreshold = parseEther('5000');
@@ -426,24 +445,14 @@ describe('Governance', function () {
 
     await governor
       .connect(alice)
-      .queue(
-        targets,
-        values,
-        calldatas,
-        ethers.keccak256(toUtf8Bytes(description)),
-      );
+      .queue(targets, values, calldatas, keccak256(toUtf8Bytes(description)));
 
     // Timelock period
     await timeTravel(2);
 
     await governor
       .connect(alice)
-      .execute(
-        targets,
-        values,
-        calldatas,
-        ethers.keccak256(toUtf8Bytes(description)),
-      );
+      .execute(targets, values, calldatas, keccak256(toUtf8Bytes(description)));
 
     expect(await governor.votingDelay()).to.eq(newVotingDelay);
     expect(await governor.votingPeriod()).to.eq(newVotingPeriod);
@@ -454,7 +463,7 @@ describe('Governance', function () {
     expect(await locking.minSlopePeriod()).to.eq(newMinSlope);
   });
 
-  it('changes governor roles', async function () {
+  it('should change governor roles', async function () {
     const proposerRole = await timelock.PROPOSER_ROLE();
     const cancellerRole = await timelock.CANCELLER_ROLE();
 
@@ -521,12 +530,7 @@ describe('Governance', function () {
 
     await governor
       .connect(alice)
-      .queue(
-        targets,
-        values,
-        calldatas,
-        ethers.keccak256(toUtf8Bytes(description)),
-      );
+      .queue(targets, values, calldatas, keccak256(toUtf8Bytes(description)));
 
     // Timelock period
     await timeTravel(2);
@@ -540,12 +544,7 @@ describe('Governance', function () {
 
     await governor
       .connect(alice)
-      .execute(
-        targets,
-        values,
-        calldatas,
-        ethers.keccak256(toUtf8Bytes(description)),
-      );
+      .execute(targets, values, calldatas, keccak256(toUtf8Bytes(description)));
 
     expect(await timelock.hasRole(proposerRole, newProposer)).to.be.true;
     expect(await timelock.hasRole(cancellerRole, newCanceller)).to.be.true;
@@ -553,5 +552,85 @@ describe('Governance', function () {
       await timelock.hasRole(proposerRole, governanceAddresses.MentoGovernor),
     ).to.be.false;
     expect(await timelock.hasRole(cancellerRole, watchdogAddress)).to.be.false;
+  });
+
+  it('should upgrade upgradable contracts', async function () {
+    const newLocking = await deployContract('MockLocking');
+    const newTimelock = await deployContract('MockTimelock');
+    const newGovernor = await deployContract('MockGovernor');
+
+    const targets = Array(3).fill(proxyAdmin.target);
+    const values = Array(3).fill(0);
+    const calldatas = [];
+    const description = 'Upgrade upgradable contracts';
+
+    calldatas.push(
+      proxyAdmin.interface.encodeFunctionData('upgrade', [
+        locking.target,
+        newLocking.target,
+      ]),
+    );
+
+    calldatas.push(
+      proxyAdmin.interface.encodeFunctionData('upgrade', [
+        timelock.target,
+        newTimelock.target,
+      ]),
+    );
+
+    calldatas.push(
+      proxyAdmin.interface.encodeFunctionData('upgrade', [
+        governor.target,
+        newGovernor.target,
+      ]),
+    );
+
+    // Create a proposal to transfer tokens from the treasury
+    const tx = await governor
+      .connect(alice)
+      .propose(targets, values, calldatas, description);
+
+    // Get the proposalId from the event logs
+    const receipt = await tx.wait();
+    const proposalCreatedEvent = receipt.logs.find(
+      (e: EventLog) => e.fragment.name === 'ProposalCreated',
+    );
+
+    const proposalId = proposalCreatedEvent.args[0];
+
+    // Vote on the proposal using multiple accounts, with the majority voting NO
+    await governor.connect(alice).castVote(proposalId, 0);
+    await governor.connect(bob).castVote(proposalId, 1);
+    await governor.connect(charlie).castVote(proposalId, 1);
+
+    // Voting period
+    await timeTravel(7);
+
+    await governor
+      .connect(alice)
+      .queue(targets, values, calldatas, keccak256(toUtf8Bytes(description)));
+
+    // Timelock period
+    await timeTravel(2);
+
+    // functions implemented in the old versions
+    await locking.getWeek();
+    await timelock.getMinDelay();
+    await governor.votingDelay();
+
+    await governor
+      .connect(alice)
+      .execute(targets, values, calldatas, keccak256(toUtf8Bytes(description)));
+
+    // new implementations does not implement the functions
+    await expect(locking.getWeek()).to.be.revertedWith(
+      'MockLocking: lock not implemented',
+    );
+    await expect(timelock.getMinDelay()).to.be.revertedWith(
+      'MockTimelock: getMinDelay not implemented',
+    );
+    await expect(governor.votingDelay()).to.be.revertedWith(
+      'MockGovernor: votingDelay not implemented',
+    );
   });
 });
