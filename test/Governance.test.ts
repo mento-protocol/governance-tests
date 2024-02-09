@@ -1,8 +1,10 @@
 import { expect } from 'chai';
 import hre, { ethers } from 'hardhat';
+import { EventLog } from 'ethers';
 import * as mento from '@mento-protocol/mento-sdk';
 import * as helpers from '@nomicfoundation/hardhat-toolbox/network-helpers';
 import { HardhatEthersSigner } from '@nomicfoundation/hardhat-ethers/signers';
+
 import {
   MentoToken,
   MentoToken__factory,
@@ -19,9 +21,8 @@ import { ProxyAdmin } from '../typechain-types/@openzeppelin/contracts/proxy/tra
 import { ProxyAdmin__factory } from '../typechain-types/factories/proxy/transparent';
 
 import { timeTravel } from './utils/utils';
-import { EventLog, toUtf8Bytes } from 'ethers';
 
-describe.only('Governance', function () {
+describe('Governance', function () {
   const {
     provider,
     parseEther,
@@ -31,6 +32,7 @@ describe.only('Governance', function () {
     keccak256,
     deployContract,
     getImpersonatedSigner,
+    toUtf8Bytes,
   } = ethers;
 
   let governanceAddresses: mento.ContractAddresses;
@@ -45,6 +47,13 @@ describe.only('Governance', function () {
   let charlie: HardhatEthersSigner;
   let david: HardhatEthersSigner;
   let initialBalance: bigint;
+
+  before(async function () {
+    const chainId = await setupEnvironment();
+    console.log('\r\n========================');
+    console.log('Running Governance tests on network with chain id:', chainId);
+    console.log('========================\r\n');
+  });
 
   beforeEach(async function () {
     // reset the fork state between tests to not pollute the state
@@ -61,79 +70,12 @@ describe.only('Governance', function () {
       .connect(treasury)
       .transfer(charlie.address, initialBalance);
 
-    await mentoToken
-      .connect(alice)
-      .approve(governanceAddresses.Locking, MaxUint256);
-    await mentoToken
-      .connect(bob)
-      .approve(governanceAddresses.Locking, MaxUint256);
-    await mentoToken
-      .connect(charlie)
-      .approve(governanceAddresses.Locking, MaxUint256);
-
-    await locking
-      .connect(alice)
-      .lock(alice.address, alice.address, initialBalance, 52, 52);
-    await locking
-      .connect(bob)
-      .lock(bob.address, bob.address, initialBalance, 52, 52);
-    await locking
-      .connect(charlie)
-      .lock(charlie.address, charlie.address, initialBalance, 52, 52);
-  });
-
-  before(async function () {
-    const chainId = hre.network.config.chainId;
-    if (!chainId) {
-      throw new Error('Chain ID not found');
-    }
-
-    const signers = (await getSigners()) as HardhatEthersSigner[];
-    if (signers[0] && signers[1] && signers[2] && signers[3]) {
-      [alice, bob, charlie, david] = signers;
-    }
-
-    governanceAddresses = mento.addresses[chainId]!;
-    if (!governanceAddresses) {
-      throw new Error('Governance addresses not found for this chain');
-    }
-
-    mentoToken = MentoToken__factory.connect(
-      governanceAddresses.MentoToken,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      provider as any,
+    await approveAndLock(
+      mentoToken,
+      locking,
+      [alice, bob, charlie],
+      initialBalance,
     );
-
-    locking = Locking__factory.connect(
-      governanceAddresses.Locking,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      provider as any,
-    );
-
-    governor = MentoGovernor__factory.connect(
-      governanceAddresses.MentoGovernor,
-      provider as any,
-    );
-
-    timelock = TimelockController__factory.connect(
-      governanceAddresses.TimelockController,
-      provider as any,
-    );
-
-    governanceFactory = GovernanceFactory__factory.connect(
-      governanceAddresses.GovernanceFactory,
-      provider as any,
-    );
-
-    const proxyAdminAddress = await governanceFactory.proxyAdmin();
-    proxyAdmin = ProxyAdmin__factory.connect(
-      proxyAdminAddress,
-      provider as any,
-    );
-
-    console.log('\r\n========================');
-    console.log('Running Governance tests on network with chain id:', chainId);
-    console.log('========================\r\n');
   });
 
   it('should transfer tokens from treasury', async function () {
@@ -147,28 +89,22 @@ describe.only('Governance', function () {
     ]);
 
     await expect(
-      governor
-        .connect(david)
-        .propose(
-          [governanceAddresses.MentoToken],
-          [0],
-          [calldata],
-          description,
-        ),
+      submitProposal(
+        david,
+        [governanceAddresses.MentoToken],
+        [0n],
+        [calldata],
+        description,
+      ),
     ).to.be.revertedWith('Governor: proposer votes below proposal threshold');
 
-    // Create a proposal to transfer tokens from the treasury
-    const tx = await governor
-      .connect(alice)
-      .propose([governanceAddresses.MentoToken], [0], [calldata], description);
-
-    // Get the proposalId from the event logs
-    const receipt = await tx.wait();
-    const proposalCreatedEvent = receipt.logs.find(
-      (e: EventLog) => e.fragment.name === 'ProposalCreated',
+    const proposalId = submitProposal(
+      alice,
+      [governanceAddresses.MentoToken],
+      [0n],
+      [calldata],
+      description,
     );
-
-    const proposalId = proposalCreatedEvent.args[0];
 
     // Vote on the proposal using multiple accounts, with the majority voting YES
     await governor.connect(alice).castVote(proposalId, 1);
@@ -243,17 +179,13 @@ describe.only('Governance', function () {
     ]);
 
     // Create a proposal to transfer tokens from the treasury
-    const tx = await governor
-      .connect(alice)
-      .propose([governanceAddresses.MentoToken], [0], [calldata], description);
-
-    // Get the proposalId from the event logs
-    const receipt = await tx.wait();
-    const proposalCreatedEvent = receipt.logs.find(
-      (e: EventLog) => e.fragment.name === 'ProposalCreated',
+    const proposalId = submitProposal(
+      alice,
+      [governanceAddresses.MentoToken],
+      [0n],
+      [calldata],
+      description,
     );
-
-    const proposalId = proposalCreatedEvent.args[0];
 
     // Vote on the proposal using multiple accounts, with the majority voting YES
     await governor.connect(alice).castVote(proposalId, 1);
@@ -321,17 +253,13 @@ describe.only('Governance', function () {
     ]);
 
     // Create a proposal to transfer tokens from the treasury
-    const tx = await governor
-      .connect(alice)
-      .propose([governanceAddresses.MentoToken], [0], [calldata], description);
-
-    // Get the proposalId from the event logs
-    const receipt = await tx.wait();
-    const proposalCreatedEvent = receipt.logs.find(
-      (e: EventLog) => e.fragment.name === 'ProposalCreated',
+    const proposalId = submitProposal(
+      alice,
+      [governanceAddresses.MentoToken],
+      [0n],
+      [calldata],
+      description,
     );
-
-    const proposalId = proposalCreatedEvent.args[0];
 
     // Vote on the proposal using multiple accounts, with the majority voting NO
     await governor.connect(alice).castVote(proposalId, 0);
@@ -422,18 +350,14 @@ describe.only('Governance', function () {
       locking.interface.encodeFunctionData('setMinSlopePeriod', [newMinSlope]),
     );
 
-    // Create a proposal to transfer tokens from the treasury
-    const tx = await governor
-      .connect(alice)
-      .propose(targets, values, calldatas, description);
-
-    // Get the proposalId from the event logs
-    const receipt = await tx.wait();
-    const proposalCreatedEvent = receipt.logs.find(
-      (e: EventLog) => e.fragment.name === 'ProposalCreated',
+    // Create a proposal to update governor config
+    const proposalId = submitProposal(
+      alice,
+      targets,
+      values,
+      calldatas,
+      description,
     );
-
-    const proposalId = proposalCreatedEvent.args[0];
 
     // Vote on the proposal using multiple accounts, with the majority voting NO
     await governor.connect(alice).castVote(proposalId, 0);
@@ -507,18 +431,14 @@ describe.only('Governance', function () {
       ]),
     );
 
-    // Create a proposal to transfer tokens from the treasury
-    const tx = await governor
-      .connect(alice)
-      .propose(targets, values, calldatas, description);
-
-    // Get the proposalId from the event logs
-    const receipt = await tx.wait();
-    const proposalCreatedEvent = receipt.logs.find(
-      (e: EventLog) => e.fragment.name === 'ProposalCreated',
+    // Create a proposal to change governor roles
+    const proposalId = submitProposal(
+      alice,
+      targets,
+      values,
+      calldatas,
+      description,
     );
-
-    const proposalId = proposalCreatedEvent.args[0];
 
     // Vote on the proposal using multiple accounts, with the majority voting NO
     await governor.connect(alice).castVote(proposalId, 0);
@@ -585,18 +505,14 @@ describe.only('Governance', function () {
       ]),
     );
 
-    // Create a proposal to transfer tokens from the treasury
-    const tx = await governor
-      .connect(alice)
-      .propose(targets, values, calldatas, description);
-
-    // Get the proposalId from the event logs
-    const receipt = await tx.wait();
-    const proposalCreatedEvent = receipt.logs.find(
-      (e: EventLog) => e.fragment.name === 'ProposalCreated',
+    // Create a proposal to upgrade contracts
+    const proposalId = submitProposal(
+      alice,
+      targets,
+      values,
+      calldatas,
+      description,
     );
-
-    const proposalId = proposalCreatedEvent.args[0];
 
     // Vote on the proposal using multiple accounts, with the majority voting NO
     await governor.connect(alice).castVote(proposalId, 0);
@@ -633,4 +549,93 @@ describe.only('Governance', function () {
       'MockGovernor: votingDelay not implemented',
     );
   });
+
+  const setupEnvironment = async (): Promise<number> => {
+    const chainId = hre.network.config.chainId;
+    if (!chainId) {
+      throw new Error('Chain ID not found');
+    }
+
+    const signers = (await getSigners()) as HardhatEthersSigner[];
+    if (signers[0] && signers[1] && signers[2] && signers[3]) {
+      [alice, bob, charlie, david] = signers;
+    }
+
+    governanceAddresses = mento.addresses[chainId]!;
+    if (!governanceAddresses) {
+      throw new Error('Governance addresses not found for this chain');
+    }
+
+    mentoToken = MentoToken__factory.connect(
+      governanceAddresses.MentoToken,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      provider as any,
+    );
+
+    locking = Locking__factory.connect(
+      governanceAddresses.Locking,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      provider as any,
+    );
+
+    governor = MentoGovernor__factory.connect(
+      governanceAddresses.MentoGovernor,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      provider as any,
+    );
+
+    timelock = TimelockController__factory.connect(
+      governanceAddresses.TimelockController,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      provider as any,
+    );
+
+    governanceFactory = GovernanceFactory__factory.connect(
+      governanceAddresses.GovernanceFactory,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      provider as any,
+    );
+
+    const proxyAdminAddress = await governanceFactory.proxyAdmin();
+    proxyAdmin = ProxyAdmin__factory.connect(
+      proxyAdminAddress,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      provider as any,
+    );
+
+    return chainId;
+  };
+
+  const approveAndLock = async (
+    token: MentoToken,
+    locking: Locking,
+    signers: HardhatEthersSigner[],
+    amount: bigint,
+  ) => {
+    for (const signer of signers) {
+      await token
+        .connect(signer)
+        .approve(governanceAddresses.Locking, MaxUint256);
+      await locking
+        .connect(signer)
+        .lock(signer.address, signer.address, amount, 52, 52);
+    }
+  };
+
+  const submitProposal = async (
+    proposalSigner: HardhatEthersSigner,
+    targets: string[],
+    values: bigint[],
+    calldatas: string[],
+    description: string,
+  ): Promise<bigint> => {
+    const tx = await governor
+      .connect(proposalSigner)
+      .propose(targets, values, calldatas, description);
+    const receipt = await tx.wait();
+    const proposalCreatedEvent = receipt.logs.find(
+      (e: EventLog) => e.fragment.name === 'ProposalCreated',
+    );
+    return proposalCreatedEvent.args[0]; // Returns the proposalId
+  };
 });
