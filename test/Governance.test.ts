@@ -611,7 +611,7 @@ describe('Governance', function () {
     locking: Locking,
     signers: HardhatEthersSigner[],
     amount: bigint,
-  ) => {
+  ): Promise<void> => {
     for (const signer of signers) {
       await token
         .connect(signer)
