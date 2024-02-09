@@ -561,6 +561,7 @@ describe('Governance', function () {
     calldatas: string[],
     description: string,
   ): Promise<bigint> => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const tx: any = await governor
       .connect(proposalSigner)
       [
