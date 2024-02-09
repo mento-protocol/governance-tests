@@ -18,7 +18,7 @@ import {
   GovernanceFactory__factory,
 } from '@mento-protocol/mento-core-ts';
 import { ProxyAdmin } from '../typechain-types/@openzeppelin/contracts/proxy/transparent';
-import { ProxyAdmin__factory } from '../typechain-types/factories/proxy/transparent';
+import { ProxyAdmin__factory } from '../typechain-types/factories/@openzeppelin/contracts/proxy/transparent';
 
 import { timeTravel } from './utils/utils';
 
