@@ -18,7 +18,7 @@ describe('Emission Contract', function () {
   const YEAR = 365 * DAY;
 
   const TOTAL_EMISSION_SUPPLY = 650000000000000000000000000n;
-  const EMISSION_SCHEDULE: [string, number, BigInt][] = [
+  const EMISSION_SCHEDULE: [string, number, bigint][] = [
     ['1 month', MONTH, 3692586569806444700000000n],
     ['6 months', 6 * MONTH, 21843234320275928950000000n],
     ['1 year', YEAR, 43528555608969174900000000n],
