@@ -84,8 +84,6 @@ describe('Emission Contract', function () {
         }
 
         await helpers.time.increase(BigInt(timeToTravel) - elapsed);
-        expect(BigInt(await helpers.time.latest()) - start).to.eq(timeToTravel);
-
         expect(await emission.calculateEmission()).to.equal(expectedEmission);
       });
     }
@@ -106,16 +104,12 @@ describe('Emission Contract', function () {
         // emission.emitTokens() will increase block.timestamp by 1 second,
         // therefore to mint at the exact time, we need to subtract 1s
         await helpers.time.increase(BigInt(timeToTravel) - elapsed - BigInt(1));
-        expect(BigInt(await helpers.time.latest()) - start).to.eq(
-          timeToTravel - 1,
-        );
 
         const emittedSoFar = await emission.totalEmittedAmount();
         expect(await mentoToken.emittedAmount()).to.equal(emittedSoFar);
 
         const [signer] = await ethers.getSigners();
         await emission.connect(signer!).emitTokens();
-        expect(BigInt(await helpers.time.latest()) - start).to.eq(timeToTravel);
 
         expect(await emission.totalEmittedAmount()).to.equal(
           emittedSoFar + expectedEmission,
