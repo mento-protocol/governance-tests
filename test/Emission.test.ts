@@ -71,7 +71,7 @@ describe('Emission Contract', function () {
     console.log('========================\r\n');
   });
 
-  describe('emission.calculateEmission()', async function () {
+  describe('calculateEmission()', async function () {
     for (const [period, timeToTravel, expectedEmission] of EMISSION_SCHEDULE) {
       it(`should calculate the correct amount after ${period}`, async function () {
         const start = await emission.emissionStartTime();
@@ -91,7 +91,7 @@ describe('Emission Contract', function () {
     }
   });
 
-  describe('emission.emitTokens()', async function () {
+  describe('emitTokens()', async function () {
     for (const [period, timeToTravel, expectedEmission] of EMISSION_SCHEDULE) {
       it(`should emit the correct amount after ${period}`, async function () {
         const start = await emission.emissionStartTime();
