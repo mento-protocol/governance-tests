@@ -22,7 +22,7 @@ import { ProxyAdmin__factory } from '../typechain-types/factories/@openzeppelin/
 
 import { timeTravel } from './utils/utils';
 
-only('Governance', function () {
+describe('Governance', function () {
   const {
     provider,
     parseEther,
