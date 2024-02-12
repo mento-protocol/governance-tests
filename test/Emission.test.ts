@@ -52,7 +52,6 @@ describe('Emission Contract', function () {
 
     emission = Emission__factory.connect(
       governanceAddresses.Emission,
-      // @TODO: Do I need this line below?
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       provider as any,
     );
