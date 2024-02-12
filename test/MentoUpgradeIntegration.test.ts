@@ -109,8 +109,8 @@ describe('Mento Upgrade', function () {
 
   it('should allow for new Contracts to be initialized', async function () {
     const newStableToken = await deployContract('StableTokenV2', [false]);
-    await newStableToken.transferOwnership(mentoAddresses.TimelockController);
-    expect(await newStableToken.owner()).to.equal(
+    await newStableToken.transferOwnership!(mentoAddresses.TimelockController);
+    expect(await newStableToken.owner!()).to.equal(
       mentoAddresses.TimelockController,
     );
 
@@ -148,9 +148,9 @@ describe('Mento Upgrade', function () {
 
     await mentoGovernor.connect(proposer)['execute(uint256)'](proposalId);
 
-    expect(await newStableToken.name()).to.equal('testToken');
-    expect(await newStableToken.symbol()).to.equal('tt');
-    expect(await newStableToken.owner()).to.equal(
+    expect(await newStableToken.name!()).to.equal('testToken');
+    expect(await newStableToken.symbol!()).to.equal('tt');
+    expect(await newStableToken.owner!()).to.equal(
       mentoAddresses.TimelockController,
     );
   });
