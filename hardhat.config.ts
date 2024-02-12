@@ -29,6 +29,16 @@ const config: HardhatUserConfig = {
       gasPrice: 0,
     },
   },
+  solidity: {
+    version: '0.8.18',
+    settings: {
+      optimizer: {
+        enabled: true,
+        runs: 200,
+      },
+      viaIR: true,
+    },
+  },
 };
 
 export default config;
