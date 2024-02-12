@@ -1,16 +1,14 @@
 import { expect } from 'chai';
 import hre, { ethers } from 'hardhat';
-import {
-  ContractAddresses,
-  addresses as MentoAddresses,
-} from '@mento-protocol/mento-sdk';
+import * as mento from '@mento-protocol/mento-sdk';
 import * as helpers from '@nomicfoundation/hardhat-toolbox/network-helpers';
+
 import { MentoToken, MentoToken__factory } from '@mento-protocol/mento-core-ts';
 
 describe('Mento Token', function () {
   const { provider, parseEther } = ethers;
 
-  let contractAddresses: ContractAddresses;
+  let governanceAddresses: mento.ContractAddresses;
   let mentoToken: MentoToken;
 
   beforeEach(async function () {
@@ -25,15 +23,13 @@ describe('Mento Token', function () {
       throw new Error('Chain ID not found');
     }
 
-    const mentoChainContracts = MentoAddresses[chainId];
-    if (!mentoChainContracts) {
+    governanceAddresses = mento.addresses[chainId]!;
+    if (!governanceAddresses) {
       throw new Error('Governance addresses not found for this chain');
     }
 
-    contractAddresses = mentoChainContracts;
-
     mentoToken = MentoToken__factory.connect(
-      contractAddresses.MentoToken,
+      governanceAddresses.MentoToken,
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       provider as any,
     );
@@ -59,7 +55,7 @@ describe('Mento Token', function () {
 
   it('should successfully mint when called by the Emission contract', async function () {
     const emissionSigner = await ethers.getImpersonatedSigner(
-      contractAddresses.Emission,
+      governanceAddresses.Emission,
     );
     const [receiver] = await ethers.getSigners();
     const supplyBefore = await mentoToken.totalSupply();
@@ -74,7 +70,7 @@ describe('Mento Token', function () {
 
   it('should allow for tokens to be transferred', async function () {
     const emissionSigner = await ethers.getImpersonatedSigner(
-      contractAddresses.Emission,
+      governanceAddresses.Emission,
     );
     const [bob, alice] = await ethers.getSigners();
     const supplyBefore = await mentoToken.totalSupply();
@@ -100,7 +96,7 @@ describe('Mento Token', function () {
 
   it('should allow for tokens to be burned', async function () {
     const emissionSigner = await ethers.getImpersonatedSigner(
-      contractAddresses.Emission,
+      governanceAddresses.Emission,
     );
     const [bob] = await ethers.getSigners();
     const supplyBefore = await mentoToken.totalSupply();
