@@ -85,7 +85,7 @@ describe('Mento Upgrade', function () {
     );
 
     celoGovernanceAddress =
-      await registryContract.getAddressForString('Governance');
+      await registryContract.getAddressForString!('Governance');
 
     const signers = (await getSigners()) as HardhatEthersSigner[];
     if (
@@ -214,7 +214,7 @@ describe('Mento Upgrade', function () {
       proxyABI,
       provider,
     );
-    const reserveImplementation = await reserveProxy._getImplementation()!;
+    const reserveImplementation = await reserveProxy._getImplementation!();
 
     const reserveImplementationContract = Reserve__factory.connect(
       reserveImplementation,
