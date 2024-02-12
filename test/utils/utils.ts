@@ -1,5 +1,6 @@
 import * as helpers from '@nomicfoundation/hardhat-toolbox/network-helpers';
 
+// Move block.timestamp and block.number in sync
 export const timeTravel = async (days: number): Promise<void> => {
   const blocks = (days * 86400) / 5 + 1;
   await helpers.mine(blocks, { interval: 5 });
@@ -19,7 +20,6 @@ export const calculateVotingPower = (
   const MIN_CLIFF_PERIOD = 0n;
   const MIN_SLOPE_PERIOD = 1n;
 
-  // Arithmetic operations using BigInt directly
   const amount =
     (tokens *
       (ST_FORMULA_CONST_MULTIPLIER +

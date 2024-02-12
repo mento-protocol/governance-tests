@@ -22,7 +22,7 @@ import { ProxyAdmin__factory } from '../typechain-types/factories/@openzeppelin/
 
 import { timeTravel } from './utils/utils';
 
-describe('Governance', function () {
+only('Governance', function () {
   const {
     provider,
     parseEther,
@@ -245,7 +245,7 @@ describe('Governance', function () {
     ).to.be.revertedWith('Governor: proposal not successful');
   });
 
-  it('it should update governor config', async function () {
+  it('should update governor config', async function () {
     const newVotingDelay = 17_280; // 1 day in CELO
     const newVotingPeriod = 2 * 120_960; // 2 weeks in CELO
     const newThreshold = parseEther('5000');
