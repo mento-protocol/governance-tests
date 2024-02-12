@@ -303,7 +303,7 @@ describe('Governance', function () {
       description,
     );
 
-    // Vote on the proposal using multiple accounts, with the majority voting NO
+    // Vote on the proposal using multiple accounts, with the majority voting YES
     await governor.connect(alice).castVote(proposalId, 0);
     await governor.connect(bob).castVote(proposalId, 1);
     await governor.connect(charlie).castVote(proposalId, 1);
@@ -380,7 +380,7 @@ describe('Governance', function () {
       description,
     );
 
-    // Vote on the proposal using multiple accounts, with the majority voting NO
+    // Vote on the proposal using multiple accounts, with the majority voting YES
     await governor.connect(alice).castVote(proposalId, 0);
     await governor.connect(bob).castVote(proposalId, 1);
     await governor.connect(charlie).castVote(proposalId, 1);
@@ -450,7 +450,7 @@ describe('Governance', function () {
       description,
     );
 
-    // Vote on the proposal using multiple accounts, with the majority voting NO
+    // Vote on the proposal using multiple accounts, with the majority voting YES
     await governor.connect(alice).castVote(proposalId, 0);
     await governor.connect(bob).castVote(proposalId, 1);
     await governor.connect(charlie).castVote(proposalId, 1);
