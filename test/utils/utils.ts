@@ -1,5 +1,13 @@
+import { HardhatEthersSigner } from '@nomicfoundation/hardhat-ethers/signers';
 import * as helpers from '@nomicfoundation/hardhat-toolbox/network-helpers';
-
+import { ethers } from 'hardhat';
+import { EventLog } from 'ethers';
+import {
+  MentoToken__factory,
+  Locking__factory,
+  MentoGovernor__factory,
+} from '@mento-protocol/mento-core-ts';
+import * as mento from '@mento-protocol/mento-sdk';
 // Move block.timestamp and block.number in sync
 export const timeTravel = async (days: number): Promise<void> => {
   const blocks = (days * 86400) / 5 + 1;
@@ -30,4 +38,62 @@ export const calculateVotingPower = (
     ST_FORMULA_DIVIDER;
 
   return amount;
+};
+
+export const setUpTestAccounts = async (
+  accounts: HardhatEthersSigner[],
+  giveVotingPower: boolean,
+  mentoAddresses: mento.ContractAddresses,
+): Promise<void> => {
+  const emissionSigner = await ethers.getImpersonatedSigner(
+    mentoAddresses.Emission,
+  );
+  const mentoToken = MentoToken__factory.connect(
+    mentoAddresses.MentoToken,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ethers.provider as any,
+  );
+  const locking = Locking__factory.connect(
+    mentoAddresses.Locking,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ethers.provider as any,
+  );
+  const amount = ethers.parseEther('1000000');
+
+  for (const account of accounts) {
+    await mentoToken.connect(emissionSigner!).mint(account.address, amount);
+    if (giveVotingPower) {
+      await mentoToken.connect(account).approve(locking.getAddress(), amount);
+      await locking
+        .connect(account)
+        .lock(account.address, account.address, amount, 52, 52);
+    }
+  }
+};
+
+export const submitProposal = async (
+  mentoAddresses: mento.ContractAddresses,
+  proposalSigner: HardhatEthersSigner,
+  targets: string[],
+  values: bigint[],
+  calldatas: string[],
+  description: string,
+): Promise<bigint> => {
+  const governor = MentoGovernor__factory.connect(
+    mentoAddresses.MentoGovernor,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ethers.provider as any,
+  );
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const tx: any = await governor
+    .connect(proposalSigner)
+    [
+      'propose(address[],uint256[],bytes[],string)'
+    ](targets, values, calldatas, description);
+  const receipt = await tx.wait();
+  const proposalCreatedEvent = receipt.logs.find(
+    (e: EventLog) => e.fragment.name === 'ProposalCreated',
+  );
+  return proposalCreatedEvent.args[0]; // Returns the proposalId
 };
