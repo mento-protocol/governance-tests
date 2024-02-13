@@ -1,18 +1,14 @@
 import { expect } from 'chai';
-import { timeTravel } from './utils/utils';
+import { timeTravel, setUpTestAccounts, submitProposal } from './utils/utils';
 import hre, { ethers } from 'hardhat';
 import * as mento from '@mento-protocol/mento-sdk';
-import { EventLog } from 'ethers';
 import * as helpers from '@nomicfoundation/hardhat-toolbox/network-helpers';
 import { HardhatEthersSigner } from '@nomicfoundation/hardhat-ethers/signers';
-
 import {
   MentoGovernor,
   MentoGovernor__factory,
   Reserve,
   Reserve__factory,
-  MentoToken__factory,
-  Locking__factory,
 } from '@mento-protocol/mento-core-ts';
 
 describe('Mento Upgrade', function () {
@@ -51,7 +47,11 @@ describe('Mento Upgrade', function () {
     await helpers.reset(hre.network.config.forking.url);
 
     await transferOwnership();
-    await setUpTestAccounts([voter1, voter2, voter3, proposer, random]);
+    await setUpTestAccounts(
+      [voter1, voter2, voter3, proposer, random],
+      true,
+      mentoAddresses,
+    );
   });
 
   before(async function () {
@@ -88,14 +88,7 @@ describe('Mento Upgrade', function () {
       await registryContract.getAddressForString!('Governance');
 
     const signers = (await getSigners()) as HardhatEthersSigner[];
-    if (
-      signers[0] &&
-      signers[1] &&
-      signers[2] &&
-      signers[3] &&
-      signers[4] &&
-      signers[5]
-    ) {
+    if (signers[0] && signers[1] && signers[2] && signers[3] && signers[4]) {
       [proposer, random, voter1, voter2, voter3] = signers;
     }
 
@@ -107,33 +100,57 @@ describe('Mento Upgrade', function () {
     console.log('========================\r\n');
   });
 
-  it('should allow for new Contracts to be initialized', async function () {
+  it('should allow for MentoUpgrades to be proposed and executed', async function () {
     const newStableToken = await deployContract('StableTokenV2', [false]);
     await newStableToken.transferOwnership!(mentoAddresses.TimelockController);
     expect(await newStableToken.owner!()).to.equal(
       mentoAddresses.TimelockController,
     );
 
-    const target = await newStableToken.getAddress();
-    const value = 0n;
-    const calldata = newStableToken.interface.encodeFunctionData('initialize', [
-      'testToken',
-      'tt',
-      0,
-      random.address,
-      0,
-      0,
-      [],
-      [],
-      '',
-    ]);
+    const stableTokenAddr = await newStableToken.getAddress();
+    const values = Array(4).fill(0n);
+    const calldatas = [];
+
+    calldatas.push(
+      newStableToken.interface.encodeFunctionData('initialize', [
+        'testToken',
+        'tt',
+        0,
+        random.address,
+        0,
+        0,
+        [],
+        [],
+        '',
+      ]),
+    );
+    calldatas.push(
+      reserve.interface.encodeFunctionData('addToken', [stableTokenAddr]),
+    );
+    calldatas.push(
+      reserve.interface.encodeFunctionData('addCollateralAsset', [
+        mentoAddresses.MentoToken,
+      ]),
+    );
+    calldatas.push(
+      reserve.interface.encodeFunctionData(
+        'setDailySpendingRatioForCollateralAssets',
+        [[mentoAddresses.MentoToken], [parseEther('0.1')]],
+      ),
+    );
 
     const proposalId = await submitProposal(
+      mentoAddresses,
       proposer,
-      [target],
-      [value],
-      [calldata],
-      'initialize testToken',
+      [
+        stableTokenAddr,
+        mentoAddresses.Reserve,
+        mentoAddresses.Reserve,
+        mentoAddresses.Reserve,
+      ],
+      values,
+      calldatas,
+      'MU061 - Add new stable token and add new collateral assets',
     );
 
     await mentoGovernor.connect(voter1).castVote(proposalId, 1);
@@ -153,51 +170,15 @@ describe('Mento Upgrade', function () {
     expect(await newStableToken.owner!()).to.equal(
       mentoAddresses.TimelockController,
     );
-  });
 
-  it('should allow for existing Contracts to be changed', async function () {
-    const target = mentoAddresses.Reserve;
-
-    const value = 0n;
-    // add a new stableToken to the reserve
-    const calldata1 = reserve.interface.encodeFunctionData('addToken', [
-      random.address,
-    ]);
-    // add new collateral asset to the reserve
-    const calldata2 = reserve.interface.encodeFunctionData(
-      'addCollateralAsset',
-      [random.address],
+    expect(await reserve.isStableAsset(stableTokenAddr)).to.equal(true);
+    expect(await reserve.isCollateralAsset(mentoAddresses.MentoToken)).to.equal(
+      true,
     );
-    // set daily spending ratio for collateral assets
-    const calldata3 = reserve.interface.encodeFunctionData(
-      'setDailySpendingRatioForCollateralAssets',
-      [[random.address], [parseEther('0.1')]],
-    );
-
-    const proposalId = await submitProposal(
-      proposer,
-      [target, target, target],
-      [value, value, value],
-      [calldata1, calldata2, calldata3],
-      'add tokens to reserve',
-    );
-
-    await mentoGovernor.connect(voter1).castVote(proposalId, 1);
-    await mentoGovernor.connect(voter2).castVote(proposalId, 1);
-    await mentoGovernor.connect(voter3).castVote(proposalId, 1);
-
-    timeTravel(7);
-
-    await mentoGovernor.connect(proposer)['queue(uint256)'](proposalId);
-
-    timeTravel(2);
-
-    await mentoGovernor.connect(proposer)['execute(uint256)'](proposalId);
-
-    expect(await reserve.isStableAsset(random.address)).to.equal(true);
-    expect(await reserve.isCollateralAsset(random.address)).to.equal(true);
     expect(
-      await reserve.getDailySpendingRatioForCollateralAsset(random.address),
+      await reserve.getDailySpendingRatioForCollateralAsset(
+        mentoAddresses.MentoToken,
+      ),
     ).to.equal(parseEther('0.1'));
   });
 
@@ -224,52 +205,4 @@ describe('Mento Upgrade', function () {
       .connect(governance)
       .transferOwnership(mentoAddresses.TimelockController);
   }
-
-  async function setUpTestAccounts(
-    accounts: HardhatEthersSigner[],
-  ): Promise<void> {
-    const emissionSigner = await getImpersonatedSigner(mentoAddresses.Emission);
-    const mentoToken = MentoToken__factory.connect(
-      mentoAddresses.MentoToken,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      provider as any,
-    );
-    const locking = Locking__factory.connect(
-      mentoAddresses.Locking,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      provider as any,
-    );
-    for (const account of accounts) {
-      await mentoToken
-        .connect(emissionSigner!)
-        .mint(account.address, parseEther('1000000'));
-      await mentoToken
-        .connect(account)
-        .approve(locking.getAddress(), parseEther('1000000'));
-      await locking
-        .connect(account)
-        .lock(account.address, account.address, parseEther('1000000'), 52, 52);
-      expect(await locking.balanceOf(account.address)).to.greaterThan(0n);
-    }
-  }
-
-  const submitProposal = async (
-    proposalSigner: HardhatEthersSigner,
-    targets: string[],
-    values: bigint[],
-    calldatas: string[],
-    description: string,
-  ): Promise<bigint> => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const tx: any = await mentoGovernor
-      .connect(proposalSigner)
-      [
-        'propose(address[],uint256[],bytes[],string)'
-      ](targets, values, calldatas, description);
-    const receipt = await tx.wait();
-    const proposalCreatedEvent = receipt.logs.find(
-      (e: EventLog) => e.fragment.name === 'ProposalCreated',
-    );
-    return proposalCreatedEvent.args[0]; // Returns the proposalId
-  };
 });

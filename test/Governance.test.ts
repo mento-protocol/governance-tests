@@ -1,6 +1,5 @@
 import { expect } from 'chai';
 import hre, { ethers } from 'hardhat';
-import { EventLog } from 'ethers';
 import * as mento from '@mento-protocol/mento-sdk';
 import * as helpers from '@nomicfoundation/hardhat-toolbox/network-helpers';
 import { HardhatEthersSigner } from '@nomicfoundation/hardhat-ethers/signers';
@@ -20,14 +19,13 @@ import {
 import { ProxyAdmin } from '../typechain-types/@openzeppelin/contracts/proxy/transparent';
 import { ProxyAdmin__factory } from '../typechain-types/factories/@openzeppelin/contracts/proxy/transparent';
 
-import { timeTravel } from './utils/utils';
+import { timeTravel, setUpTestAccounts, submitProposal } from './utils/utils';
 
 describe('Governance', function () {
   const {
     provider,
     parseEther,
     getSigners,
-    MaxUint256,
     ZeroHash,
     keccak256,
     deployContract,
@@ -46,7 +44,6 @@ describe('Governance', function () {
   let bob: HardhatEthersSigner;
   let charlie: HardhatEthersSigner;
   let david: HardhatEthersSigner;
-  let initialBalance: bigint;
 
   before(async function () {
     const chainId = await setupEnvironment();
@@ -60,22 +57,7 @@ describe('Governance', function () {
     // @ts-expect-error - forking doesn't exist in hre for some reason
     await helpers.reset(hre.network.config.forking.url);
 
-    const treasury = await getImpersonatedSigner(
-      governanceAddresses.TimelockController,
-    );
-    initialBalance = parseEther('1000000');
-    await mentoToken.connect(treasury).transfer(alice.address, initialBalance);
-    await mentoToken.connect(treasury).transfer(bob.address, initialBalance);
-    await mentoToken
-      .connect(treasury)
-      .transfer(charlie.address, initialBalance);
-
-    await approveAndLock(
-      mentoToken,
-      locking,
-      [alice, bob, charlie],
-      initialBalance,
-    );
+    await setUpTestAccounts([alice, bob, charlie], true, governanceAddresses);
   });
 
   it('should transfer tokens from treasury', async function () {
@@ -90,6 +72,7 @@ describe('Governance', function () {
 
     await expect(
       submitProposal(
+        governanceAddresses,
         david,
         [governanceAddresses.MentoToken],
         [0n],
@@ -99,6 +82,7 @@ describe('Governance', function () {
     ).to.be.revertedWith('Governor: proposer votes below proposal threshold');
 
     const proposalId = submitProposal(
+      governanceAddresses,
       alice,
       [governanceAddresses.MentoToken],
       [0n],
@@ -152,6 +136,7 @@ describe('Governance', function () {
 
     // Create a proposal to transfer tokens from the treasury
     const proposalId = submitProposal(
+      governanceAddresses,
       alice,
       [governanceAddresses.MentoToken],
       [0n],
@@ -212,6 +197,7 @@ describe('Governance', function () {
 
     // Create a proposal to transfer tokens from the treasury
     const proposalId = submitProposal(
+      governanceAddresses,
       alice,
       [governanceAddresses.MentoToken],
       [0n],
@@ -296,6 +282,7 @@ describe('Governance', function () {
 
     // Create a proposal to update governor config
     const proposalId = submitProposal(
+      governanceAddresses,
       alice,
       targets,
       values,
@@ -373,6 +360,7 @@ describe('Governance', function () {
 
     // Create a proposal to change governor roles
     const proposalId = submitProposal(
+      governanceAddresses,
       alice,
       targets,
       values,
@@ -443,6 +431,7 @@ describe('Governance', function () {
 
     // Create a proposal to upgrade contracts
     const proposalId = submitProposal(
+      governanceAddresses,
       alice,
       targets,
       values,
@@ -536,41 +525,5 @@ describe('Governance', function () {
     );
 
     return chainId;
-  };
-
-  const approveAndLock = async (
-    token: MentoToken,
-    locking: Locking,
-    signers: HardhatEthersSigner[],
-    amount: bigint,
-  ): Promise<void> => {
-    for (const signer of signers) {
-      await token
-        .connect(signer)
-        .approve(governanceAddresses.Locking, MaxUint256);
-      await locking
-        .connect(signer)
-        .lock(signer.address, signer.address, amount, 52, 52);
-    }
-  };
-
-  const submitProposal = async (
-    proposalSigner: HardhatEthersSigner,
-    targets: string[],
-    values: bigint[],
-    calldatas: string[],
-    description: string,
-  ): Promise<bigint> => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const tx: any = await governor
-      .connect(proposalSigner)
-      [
-        'propose(address[],uint256[],bytes[],string)'
-      ](targets, values, calldatas, description);
-    const receipt = await tx.wait();
-    const proposalCreatedEvent = receipt.logs.find(
-      (e: EventLog) => e.fragment.name === 'ProposalCreated',
-    );
-    return proposalCreatedEvent.args[0]; // Returns the proposalId
   };
 });
