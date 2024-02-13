@@ -7,7 +7,7 @@
     "test": "NETWORK=celo pnpm exec hardhat test",
     "test:alfajores": "NETWORK=alfajores pnpm exec hardhat test",
     "test:baklava": "NETWORK=baklava pnpm exec hardhat test",
-    "build": "pnpm tsc",
+    "build": "NETWORK=alfajores hardhat compile && pnpm tsc",
     "lint": "pnpm run prettier:check &&  pnpm run eslint:check",
     "prettier:check": "prettier --config \"./.prettierrc.json\" --check \"**/*.ts\"",
     "prettier": "prettier --config \"./.prettierrc.json\" --write \"**/*.ts\"",
@@ -18,6 +18,7 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
+    "@openzeppelin/contracts": "4.8.3",
     "@mento-protocol/mento-core-ts": "0.2.1",
     "@mento-protocol/mento-sdk": "0.2.3",
     "@nomicfoundation/hardhat-chai-matchers": "^2.0.3",

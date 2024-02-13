@@ -32,4 +32,4 @@ jobs:
         run: pnpm lint
 
       - name: Start node & test
-        run: pnpm hardhat node & pnpm test:alfajores
+        run: pnpm test:alfajores
