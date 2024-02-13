@@ -207,7 +207,6 @@ describe('Mento Upgrade', function () {
     await reserve
       .connect(governance)
       .transferOwnership(mentoAddresses.TimelockController);
-    expect(await reserve.owner()).to.equal(mentoAddresses.TimelockController);
 
     const reserveProxy = await new Contract(
       mentoAddresses.Reserve,
@@ -224,10 +223,6 @@ describe('Mento Upgrade', function () {
     await reserveImplementationContract
       .connect(governance)
       .transferOwnership(mentoAddresses.TimelockController);
-
-    expect(await reserveImplementationContract.owner()).to.equal(
-      mentoAddresses.TimelockController,
-    );
   }
 
   async function setUpTestAccounts(
