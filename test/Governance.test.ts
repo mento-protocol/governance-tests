@@ -472,7 +472,7 @@ describe('Governance', function () {
 
     // new implementations does not implement the functions
     await expect(locking.getWeek()).to.be.revertedWith(
-      'MockLocking: lock not implemented',
+      'MockLocking: getWeek not implemented',
     );
     await expect(timelock.getMinDelay()).to.be.revertedWith(
       'MockTimelock: getMinDelay not implemented',
