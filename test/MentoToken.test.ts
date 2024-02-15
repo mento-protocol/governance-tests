@@ -2,13 +2,14 @@ import { expect } from 'chai';
 import hre, { ethers } from 'hardhat';
 import * as mento from '@mento-protocol/mento-sdk';
 import * as helpers from '@nomicfoundation/hardhat-toolbox/network-helpers';
+import { unpauseMentoToken, setUpTestAccounts } from './utils/utils';
 
 import { MentoToken, MentoToken__factory } from '@mento-protocol/mento-core-ts';
 
 describe('Mento Token', function () {
   const { provider, parseEther } = ethers;
 
-  let governanceAddresses: mento.ContractAddresses;
+  let mentoAddresses: mento.ContractAddresses;
   let mentoToken: MentoToken;
 
   beforeEach(async function () {
@@ -23,13 +24,13 @@ describe('Mento Token', function () {
       throw new Error('Chain ID not found');
     }
 
-    governanceAddresses = mento.addresses[chainId]!;
-    if (!governanceAddresses) {
+    mentoAddresses = mento.addresses[chainId]!;
+    if (!mentoAddresses) {
       throw new Error('Governance addresses not found for this chain');
     }
 
     mentoToken = MentoToken__factory.connect(
-      governanceAddresses.MentoToken,
+      mentoAddresses.MentoToken,
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       provider as any,
     );
@@ -41,7 +42,7 @@ describe('Mento Token', function () {
 
   it('should have supply gte initial supply', async function () {
     const totalSupply = await mentoToken.totalSupply();
-    const initialTokenSupply = parseEther('350000000');
+    const initialTokenSupply = parseEther('307000000');
 
     expect(totalSupply).greaterThanOrEqual(initialTokenSupply);
   });
@@ -55,7 +56,7 @@ describe('Mento Token', function () {
 
   it('should successfully mint when called by the Emission contract', async function () {
     const emissionSigner = await ethers.getImpersonatedSigner(
-      governanceAddresses.Emission,
+      mentoAddresses.Emission,
     );
     const [receiver] = await ethers.getSigners();
     const supplyBefore = await mentoToken.totalSupply();
@@ -68,9 +69,9 @@ describe('Mento Token', function () {
     expect(await mentoToken.balanceOf(receiver!.address)).to.equal(amount);
   });
 
-  it('should allow for tokens to be transferred', async function () {
+  it('should allow for tokens to be transferred by anyone when unpaused', async function () {
     const emissionSigner = await ethers.getImpersonatedSigner(
-      governanceAddresses.Emission,
+      mentoAddresses.Emission,
     );
     const [bob, alice] = await ethers.getSigners();
     const supplyBefore = await mentoToken.totalSupply();
@@ -82,6 +83,13 @@ describe('Mento Token', function () {
     await mentoToken.connect(emissionSigner!).mint(bob!.address, amountToMint);
 
     const amountToTransfer = parseEther('123');
+
+    await expect(
+      mentoToken.connect(bob!).transfer(alice!.address, amountToTransfer),
+    ).to.be.revertedWith('MentoToken: token transfer while paused');
+
+    await unpauseMentoToken(mentoAddresses);
+
     await mentoToken.connect(bob!).transfer(alice!.address, amountToTransfer);
     expect(await mentoToken.balanceOf(bob!.address)).to.equal(
       amountToMint - amountToTransfer,
@@ -94,9 +102,38 @@ describe('Mento Token', function () {
     );
   });
 
-  it('should allow for tokens to be burned', async function () {
+  it('should allow for tokens to be transferred by owner,locking and emission when paused', async function () {
+    const addresses = [
+      mentoAddresses.Emission,
+      mentoAddresses.Locking,
+      mentoAddresses.TimelockController,
+    ];
+    const [recipient] = await ethers.getSigners();
+    const amountToTransfer = parseEther('361');
+    expect(await mentoToken.paused()).to.be.true;
+
+    for (const address of addresses) {
+      const signer = await ethers.getImpersonatedSigner(address);
+      await setUpTestAccounts([signer], false, mentoAddresses);
+
+      const senderBalance = await mentoToken.balanceOf(signer.address);
+      const recipientBalance = await mentoToken.balanceOf(recipient!.address);
+
+      await mentoToken
+        .connect(signer!)
+        .transfer(recipient!.address, amountToTransfer);
+      expect(await mentoToken.balanceOf(signer!.address)).to.equal(
+        senderBalance - amountToTransfer,
+      );
+      expect(await mentoToken.balanceOf(recipient!.address)).to.equal(
+        recipientBalance + amountToTransfer,
+      );
+    }
+  });
+
+  it('should allow for tokens to be burned by anyone when unpaused', async function () {
     const emissionSigner = await ethers.getImpersonatedSigner(
-      governanceAddresses.Emission,
+      mentoAddresses.Emission,
     );
     const [bob] = await ethers.getSigners();
     const supplyBefore = await mentoToken.totalSupply();
@@ -107,6 +144,13 @@ describe('Mento Token', function () {
     await mentoToken.connect(emissionSigner!).mint(bob!.address, amountToMint);
 
     const amountToBurn = parseEther('456');
+
+    await expect(
+      mentoToken.connect(bob!).burn(amountToBurn),
+    ).to.be.revertedWith('MentoToken: token transfer while paused');
+
+    await unpauseMentoToken(mentoAddresses);
+
     await mentoToken.connect(bob!).burn(amountToBurn);
     expect(await mentoToken.balanceOf(bob!.address)).to.equal(
       amountToMint - amountToBurn,

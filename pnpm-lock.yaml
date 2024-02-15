@@ -6,11 +6,11 @@ settings:
 
 devDependencies:
   '@mento-protocol/mento-core-ts':
-    specifier: 0.2.1
-    version: 0.2.1
+    specifier: 0.2.2
+    version: 0.2.2
   '@mento-protocol/mento-sdk':
-    specifier: 0.2.3
-    version: 0.2.3(ethers@6.11.0)
+    specifier: 0.2.4
+    version: 0.2.4(ethers@6.11.0)
   '@nomicfoundation/hardhat-chai-matchers':
     specifier: ^2.0.3
     version: 2.0.4(@nomicfoundation/hardhat-ethers@3.0.5)(chai@4.4.1)(ethers@6.11.0)(hardhat@2.19.5)
@@ -532,17 +532,17 @@ packages:
       '@jridgewell/sourcemap-codec': 1.4.15
     dev: true
 
-  /@mento-protocol/mento-core-ts@0.2.1:
-    resolution: {integrity: sha512-p99LMVVZ7VEHgirdjgUjDH1HA9810c8z+i0EzcgTPBK8TjkGY47aV2DDWknjETcjIYfXek7V/GYhwdjeKoqEbw==}
+  /@mento-protocol/mento-core-ts@0.2.2:
+    resolution: {integrity: sha512-jrJdglXnTecveV0AUp9qoENXL0c7x/deNp4Abkyy7Flm0ChhyGd7qWd7W5djDIYpnPM5xzeQnsGg2b8jyNf2Xw==}
     dev: true
 
-  /@mento-protocol/mento-sdk@0.2.3(ethers@6.11.0):
-    resolution: {integrity: sha512-Rf/RBAW5+gekHWoAeNPuN1G3JbiDNEfN5QvInDvpy5JQKhqXC0ZuH7N5ja/D7ziEnY912rBGyylE1QP/H1toCA==}
+  /@mento-protocol/mento-sdk@0.2.4(ethers@6.11.0):
+    resolution: {integrity: sha512-T/FVJhc8npsb3Fm62xNcEr9HTTSo0uXalv4S9GdIAut6ppoQ3IdVONVSeGgD7VAEnP6G5/Km9WvcYpDDXnrfuQ==}
     engines: {node: '>=14'}
     peerDependencies:
       ethers: ^5.7
     dependencies:
-      '@mento-protocol/mento-core-ts': 0.2.1
+      '@mento-protocol/mento-core-ts': 0.2.2
       ethers: 6.11.0
     dev: true
 
@@ -2754,6 +2754,7 @@ packages:
       is-hex-prefixed: 1.0.0
       strip-hex-prefix: 1.0.0
     dev: true
+    bundledDependencies: false
 
   /evp_bytestokey@1.0.3:
     resolution: {integrity: sha512-/f2Go4TognH/KvCISP7OUsHn85hT9nUkxxA9BEWxFn+Oj9o8ZNLm/40hdlgSLyuOimsrTKLUMEorQexp/aPQeA==}

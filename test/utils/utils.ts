@@ -97,3 +97,17 @@ export const submitProposal = async (
   );
   return proposalCreatedEvent.args[0]; // Returns the proposalId
 };
+
+export const unpauseMentoToken = async (
+  mentoAddresses: mento.ContractAddresses,
+): Promise<void> => {
+  const mentoToken = MentoToken__factory.connect(
+    mentoAddresses.MentoToken,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ethers.provider as any,
+  );
+  const timelockController = await ethers.getImpersonatedSigner(
+    mentoAddresses.TimelockController,
+  );
+  await mentoToken.connect(timelockController!).unpause();
+};
