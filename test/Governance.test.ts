@@ -15,6 +15,8 @@ import {
   TimelockController__factory,
   GovernanceFactory,
   GovernanceFactory__factory,
+  Emission,
+  Emission__factory,
 } from '@mento-protocol/mento-core-ts';
 import { ProxyAdmin } from '../typechain-types/@openzeppelin/contracts/proxy/transparent';
 import { ProxyAdmin__factory } from '../typechain-types/factories/@openzeppelin/contracts/proxy/transparent';
@@ -34,6 +36,7 @@ describe('Governance', function () {
   } = ethers;
 
   let governanceAddresses: mento.ContractAddresses;
+  let emission: Emission;
   let mentoToken: MentoToken;
   let locking: Locking;
   let governor: MentoGovernor;
@@ -402,9 +405,10 @@ describe('Governance', function () {
     const newLocking = await deployContract('MockLocking');
     const newTimelock = await deployContract('MockTimelock');
     const newGovernor = await deployContract('MockGovernor');
+    const newEmission = await deployContract('MockEmission');
 
-    const targets = Array(3).fill(proxyAdmin.target);
-    const values = Array(3).fill(0);
+    const targets = Array(4).fill(proxyAdmin.target);
+    const values = Array(4).fill(0);
     const calldatas = [];
     const description = 'Upgrade upgradable contracts';
 
@@ -426,6 +430,13 @@ describe('Governance', function () {
       proxyAdmin.interface.encodeFunctionData('upgrade', [
         governor.target,
         newGovernor.target,
+      ]),
+    );
+
+    calldatas.push(
+      proxyAdmin.interface.encodeFunctionData('upgrade', [
+        emission.target,
+        newEmission.target,
       ]),
     );
 
@@ -456,6 +467,7 @@ describe('Governance', function () {
     await locking.getWeek();
     await timelock.getMinDelay();
     await governor.votingDelay();
+    await emission.calculateEmission();
 
     await governor.connect(alice)['execute(uint256)'](proposalId);
 
@@ -468,6 +480,9 @@ describe('Governance', function () {
     );
     await expect(governor.votingDelay()).to.be.revertedWith(
       'MockGovernor: votingDelay not implemented',
+    );
+    await expect(emission.calculateEmission()).to.be.revertedWith(
+      'MockEmission: calculateEmission not implemented',
     );
   });
 
@@ -486,6 +501,12 @@ describe('Governance', function () {
     if (!governanceAddresses) {
       throw new Error('Governance addresses not found for this chain');
     }
+
+    emission = Emission__factory.connect(
+      governanceAddresses.Emission,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      provider as any,
+    );
 
     mentoToken = MentoToken__factory.connect(
       governanceAddresses.MentoToken,
