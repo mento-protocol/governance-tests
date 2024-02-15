@@ -40,6 +40,12 @@ describe('Mento Token', function () {
     console.log('========================\r\n');
   });
 
+  it('should be owned by the TimelockController', async function () {
+    expect(await mentoToken.owner()).to.equal(
+      mentoAddresses.TimelockController,
+    );
+  });
+
   it('should have supply gte initial supply', async function () {
     const totalSupply = await mentoToken.totalSupply();
     const initialTokenSupply = parseEther('307000000');
