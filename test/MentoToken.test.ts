@@ -2,9 +2,23 @@ import { expect } from 'chai';
 import hre, { ethers } from 'hardhat';
 import * as mento from '@mento-protocol/mento-sdk';
 import * as helpers from '@nomicfoundation/hardhat-toolbox/network-helpers';
-import { unpauseMentoToken, setUpTestAccounts } from './utils/utils';
+import { setUpTestAccounts } from './utils/utils';
 
 import { MentoToken, MentoToken__factory } from '@mento-protocol/mento-core-ts';
+
+async function unpauseMentoToken(
+  mentoAddresses: mento.ContractAddresses,
+): Promise<void> {
+  const mentoToken = MentoToken__factory.connect(
+    mentoAddresses.MentoToken,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ethers.provider as any,
+  );
+  const timelockController = await ethers.getImpersonatedSigner(
+    mentoAddresses.TimelockController,
+  );
+  await mentoToken.connect(timelockController!).unpause();
+}
 
 describe('Mento Token', function () {
   const { provider, parseEther } = ethers;
