@@ -1,4 +1,6 @@
 import hre, { ethers } from 'hardhat';
+// Although BytesLike exists in ethers, linter fails to recognize it
+// eslint-disable-next-line import/named
 import { parseEther, getAddress, BytesLike } from 'ethers';
 import * as mento from '@mento-protocol/mento-sdk';
 import { expect } from 'chai';
@@ -16,7 +18,7 @@ import {
 import { getMessage } from './utils/utils';
 import { HardhatEthersSigner } from '@nomicfoundation/hardhat-ethers/signers';
 
-describe.only('Airgrab', function () {
+describe('Airgrab', function () {
   const { provider } = ethers;
 
   let governanceAddresses: mento.ContractAddresses;
@@ -320,7 +322,7 @@ describe.only('Airgrab', function () {
       ).to.be.revertedWith('Airgrab: not finished');
     });
 
-    it('Should drain token when the airgrab expired', async function () {
+    it('Should drain tokens when the airgrab expired', async function () {
       const userSigner = await ethers.getImpersonatedSigner(testUser);
 
       const YEAR = 31536000n;
