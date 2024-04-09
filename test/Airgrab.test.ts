@@ -1,5 +1,5 @@
 import hre, { ethers } from 'hardhat';
-import { parseEther, getAddress } from 'ethers';
+import { parseEther, getAddress, BytesLike } from 'ethers';
 import * as mento from '@mento-protocol/mento-sdk';
 import { expect } from 'chai';
 import * as helpers from '@nomicfoundation/hardhat-toolbox/network-helpers';
@@ -36,6 +36,9 @@ describe.only('Airgrab', function () {
 
   before(async function () {
     const chainId = hre.network.config.chainId;
+    if (!chainId) {
+      throw new Error('Chain ID not found');
+    }
 
     governanceAddresses = mento.addresses[chainId]!;
     if (!governanceAddresses) {
@@ -75,7 +78,7 @@ describe.only('Airgrab', function () {
 
   describe('Claim', function () {
     let address: string,
-      proof: string[],
+      proof: BytesLike,
       validUntil: number,
       approvedAt: number,
       fractalId: string;
@@ -159,7 +162,7 @@ describe.only('Airgrab', function () {
     });
 
     it('Should allow only the claimer', async function () {
-      const alice = ((await ethers.getSigners()) as HardhatEthersSigner[])[0];
+      const alice = ((await ethers.getSigners()) as HardhatEthersSigner[])[0]!;
 
       // Claim airgrab
       await expect(
@@ -263,12 +266,11 @@ describe.only('Airgrab', function () {
 
     it('Should delegate voting power when claimed with a delegate', async function () {
       const userSigner = await ethers.getImpersonatedSigner(testUser);
-      const delegate = (
-        (await ethers.getSigners()) as HardhatEthersSigner[]
-      )[0];
+      const alice = ((await ethers.getSigners()) as HardhatEthersSigner[])[0]!
+        .address;
 
-      expect(await locking.balanceOf(delegate)).to.eq(0);
-      expect(await locking.getVotes(delegate)).to.eq(0);
+      expect(await locking.balanceOf(alice)).to.eq(0);
+      expect(await locking.getVotes(alice)).to.eq(0);
       expect(await locking.balanceOf(testUser)).to.eq(0);
       expect(await locking.getVotes(testUser)).to.eq(0);
       expect(await airgrab.claimed(testUser)).to.eq(false);
@@ -278,7 +280,7 @@ describe.only('Airgrab', function () {
         .connect(userSigner)
         .claim(
           claimAmount,
-          delegate,
+          alice,
           process.env.MERKLE_PROOF!.split(','),
           proof,
           validUntil,
@@ -286,8 +288,8 @@ describe.only('Airgrab', function () {
           fractalId,
         );
 
-      expect(await locking.balanceOf(delegate)).to.eq(claimAmount);
-      expect(await locking.getVotes(delegate)).to.eq(claimAmount);
+      expect(await locking.balanceOf(alice)).to.eq(claimAmount);
+      expect(await locking.getVotes(alice)).to.eq(claimAmount);
       expect(await locking.balanceOf(testUser)).to.eq(0);
       expect(await locking.getVotes(testUser)).to.eq(0);
       expect(await airgrab.claimed(testUser)).to.eq(true);
@@ -314,27 +316,29 @@ describe.only('Airgrab', function () {
       const userSigner = await ethers.getImpersonatedSigner(testUser);
 
       await expect(
-        airgrab.connect(userSigner).drain(mentoToken.target),
+        airgrab.connect(userSigner).drain(governanceAddresses.MentoToken),
       ).to.be.revertedWith('Airgrab: not finished');
     });
 
     it('Should drain token when the airgrab expired', async function () {
       const userSigner = await ethers.getImpersonatedSigner(testUser);
 
-      const YEAR = 31536000;
-      await helpers.time.increase(BigInt(YEAR));
+      const YEAR = 31536000n;
+      await helpers.time.increase(YEAR);
 
       // token needs to be unpaused if paused
       if (await mentoToken.paused()) {
         const governance = await ethers.getImpersonatedSigner(
-          mentoTreasury.target,
+          governanceAddresses.TimelockController,
         );
         await mentoToken.connect(governance).unpause();
       }
 
-      const remainingBalance = await mentoToken.balanceOf(airgrab.target);
+      const remainingBalance = await mentoToken.balanceOf(
+        governanceAddresses.Airgrab,
+      );
       await expect(
-        airgrab.connect(userSigner).drain(mentoToken.target),
+        airgrab.connect(userSigner).drain(governanceAddresses.MentoToken),
       ).to.changeTokenBalances(
         mentoToken,
         [mentoTreasury, airgrab],
