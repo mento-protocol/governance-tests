@@ -11,6 +11,9 @@ coverage
 
 # local env files
 .env
+.env.alfajores
+.env.baklava
+.env.celo
 
 # Typescript
 *.tsbuildinfo

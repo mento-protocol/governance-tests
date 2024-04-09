@@ -1,6 +1,9 @@
+import { config as dotEnvConfig } from 'dotenv';
 import { HardhatUserConfig } from 'hardhat/config';
 import { NetworkConfig, networks, NetworkName } from './config';
 import '@nomicfoundation/hardhat-toolbox';
+
+dotEnvConfig({ path: `.env.${process.env.NETWORK}` });
 
 function getNetworkConfig(): NetworkConfig {
   const network = process.env.NETWORK;
