@@ -88,28 +88,19 @@ describe('Airgrab', function () {
     const claimAmount = parseEther('100');
 
     before(async function () {
-      // Create signer with TestUser3 private key
       const signer = new ethers.Wallet(
         process.env.AIRGRAB_TESTER_PK!,
         provider,
       );
 
-      // Constuct the message
       const message = getMessage();
-
-      // Sign the message
       const signature = await signer.signMessage(message);
-
-      // Url encode the message
       const encMessage = encodeURIComponent(message);
-
-      // Generate the URL
       const url = `https://credentials.next.fractal.id?message=${encMessage}&signature=${signature}`;
 
       let fractalCredentials;
 
       try {
-        // Send the message to fractal api and get the proof
         const res = await fetch(url);
         fractalCredentials = await res.json();
       } catch (err) {
@@ -117,7 +108,6 @@ describe('Airgrab', function () {
         throw new Error('Error fetching credentials from Fractal API');
       }
 
-      // Claim params
       address = fractalCredentials.address;
       proof = fractalCredentials.proof;
       validUntil = fractalCredentials.validUntil;
@@ -129,7 +119,6 @@ describe('Airgrab', function () {
       const userSigner = await ethers.getImpersonatedSigner(testUser);
       const invalidFractalProof = '0xdeaddeaddead';
 
-      // Claim airgrab
       await expect(
         airgrab
           .connect(userSigner)
@@ -147,7 +136,6 @@ describe('Airgrab', function () {
 
     it('Should fail with invalid merkle proof', async function () {
       const userSigner = await ethers.getImpersonatedSigner(testUser);
-      // Claim airgrab
       await expect(
         airgrab
           .connect(userSigner)
@@ -166,7 +154,6 @@ describe('Airgrab', function () {
     it('Should allow only the claimer', async function () {
       const alice = ((await ethers.getSigners()) as HardhatEthersSigner[])[0]!;
 
-      // Claim airgrab
       await expect(
         airgrab
           .connect(alice)
@@ -189,7 +176,6 @@ describe('Airgrab', function () {
       const now = await helpers.time.latest();
       await helpers.time.increase(BigInt(validUntil - now + 1));
 
-      // Claim airgrab
       await expect(
         airgrab
           .connect(userSigner)
@@ -212,7 +198,6 @@ describe('Airgrab', function () {
       expect(await locking.getVotes(testUser)).to.eq(0);
       expect(await airgrab.claimed(testUser)).to.eq(false);
 
-      // Claim airgrab
       await expect(
         airgrab
           .connect(userSigner)
@@ -249,21 +234,21 @@ describe('Airgrab', function () {
           validUntil,
           approvedAt,
           fractalId,
-        ),
-        // Claiming again fails
-        await expect(
-          airgrab
-            .connect(userSigner)
-            .claim(
-              claimAmount,
-              address,
-              process.env.MERKLE_PROOF!.split(','),
-              proof,
-              validUntil,
-              approvedAt,
-              fractalId,
-            ),
-        ).to.be.revertedWith('Airgrab: already claimed');
+        );
+      // Claiming again fails
+      await expect(
+        airgrab
+          .connect(userSigner)
+          .claim(
+            claimAmount,
+            address,
+            process.env.MERKLE_PROOF!.split(','),
+            proof,
+            validUntil,
+            approvedAt,
+            fractalId,
+          ),
+      ).to.be.revertedWith('Airgrab: already claimed');
     });
 
     it('Should delegate voting power when claimed with a delegate', async function () {
@@ -311,11 +296,21 @@ describe('Airgrab', function () {
           ),
       ).to.be.revertedWith('Airgrab: already claimed');
     });
-  });
 
-  describe('Drain', function () {
     it('Should fail when airgrab active', async function () {
       const userSigner = await ethers.getImpersonatedSigner(testUser);
+
+      await airgrab
+        .connect(userSigner)
+        .claim(
+          claimAmount,
+          address,
+          process.env.MERKLE_PROOF!.split(','),
+          proof,
+          validUntil,
+          approvedAt,
+          fractalId,
+        );
 
       await expect(
         airgrab.connect(userSigner).drain(governanceAddresses.MentoToken),
@@ -324,6 +319,18 @@ describe('Airgrab', function () {
 
     it('Should drain tokens when the airgrab expired', async function () {
       const userSigner = await ethers.getImpersonatedSigner(testUser);
+
+      await airgrab
+        .connect(userSigner)
+        .claim(
+          claimAmount,
+          address,
+          process.env.MERKLE_PROOF!.split(','),
+          proof,
+          validUntil,
+          approvedAt,
+          fractalId,
+        );
 
       const YEAR = 31536000n;
       await helpers.time.increase(YEAR);
