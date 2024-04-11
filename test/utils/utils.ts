@@ -13,6 +13,7 @@ export const timeTravel = async (days: number): Promise<void> => {
   const blocks = (days * 86400) / 5 + 1;
   await helpers.mine(blocks, { interval: 5 });
 };
+import { COUNTRY_NAMES } from './constants';
 
 export const calculateVotingPower = (
   tokens: bigint,
@@ -97,3 +98,27 @@ export const submitProposal = async (
   );
   return proposalCreatedEvent.args[0]; // Returns the proposalId
 };
+
+function countryList(countryCodes: string[]): string {
+  if (countryCodes.length === 0) return '';
+
+  return countryCodes
+    .map((code) => {
+      const name = COUNTRY_NAMES[code];
+      if (!name) {
+        throw new Error('invalid country');
+      }
+      return `${name} (${code})`;
+    })
+    .join(', ');
+}
+
+export function getMessage(): string {
+  const countriesString = countryList(
+    process.env.RESTRICTED_COUNTRIES!.split(','),
+  );
+
+  return `I authorize Airdrop (${process.env.FRACTAL_CLIENT_ID!}) to get a proof from Fractal that:
+- I passed KYC level plus+liveness
+- I am not a resident of the following countries: ${countriesString}`;
+}

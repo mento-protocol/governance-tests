@@ -9,8 +9,8 @@ devDependencies:
     specifier: 0.2.2
     version: 0.2.2
   '@mento-protocol/mento-sdk':
-    specifier: 0.2.4
-    version: 0.2.4(ethers@6.11.1)
+    specifier: 0.2.5
+    version: 0.2.5(ethers@6.11.1)
   '@nomicfoundation/hardhat-chai-matchers':
     specifier: ^2.0.3
     version: 2.0.5(@nomicfoundation/hardhat-ethers@3.0.5)(chai@4.4.1)(ethers@6.11.1)(hardhat@2.20.0)
@@ -47,6 +47,9 @@ devDependencies:
   chai:
     specifier: ^4.2.0
     version: 4.4.1
+  dotenv:
+    specifier: ^16.4.5
+    version: 16.4.5
   eslint:
     specifier: ^8.56.0
     version: 8.56.0
@@ -505,8 +508,8 @@ packages:
     resolution: {integrity: sha512-jrJdglXnTecveV0AUp9qoENXL0c7x/deNp4Abkyy7Flm0ChhyGd7qWd7W5djDIYpnPM5xzeQnsGg2b8jyNf2Xw==}
     dev: true
 
-  /@mento-protocol/mento-sdk@0.2.4(ethers@6.11.1):
-    resolution: {integrity: sha512-T/FVJhc8npsb3Fm62xNcEr9HTTSo0uXalv4S9GdIAut6ppoQ3IdVONVSeGgD7VAEnP6G5/Km9WvcYpDDXnrfuQ==}
+  /@mento-protocol/mento-sdk@0.2.5(ethers@6.11.1):
+    resolution: {integrity: sha512-FNoDVwkbRjxM+LGCb5dg9afXUDukJB2puZEg23c+ypV09zNzNXChmmzgxZkVqL4JVd3B6A4TeCOjX7QcbMgWTg==}
     engines: {node: '>=14'}
     peerDependencies:
       ethers: ^5.7
@@ -2172,6 +2175,11 @@ packages:
     engines: {node: '>=6.0.0'}
     dependencies:
       esutils: 2.0.3
+    dev: true
+
+  /dotenv@16.4.5:
+    resolution: {integrity: sha512-ZmdL2rui+eB2YwhsWzjInR8LldtZHGDoQ1ugH85ppHKwpUHL7j7rN0Ti9NCnGiQbhaZ11FpR+7ao1dNsmduNUg==}
+    engines: {node: '>=12'}
     dev: true
 
   /elliptic@6.5.4:

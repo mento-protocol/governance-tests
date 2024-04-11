@@ -33,3 +33,9 @@ jobs:
 
       - name: Start node & test
         run: pnpm test:alfajores
+        env:
+          FRACTAL_CLIENT_ID: 'I28eze1-UTsP66nYyBDgiRrGCA7Oe6cRFkl7Gk0Gr1A'
+          MERKLE_PROOF: ${{secrets.MERKLE_PROOF}}
+          AIRGRAB_TESTER: '0x12860B283318bb73195F22C54d88f094aFc3DF1a'
+          AIRGRAB_TESTER_PK: ${{secrets.AIRGRAB_TESTER_PK}}
+          RESTRICTED_COUNTRIES: 'CD,CU,GB,IR,KP,ML,MM,SS,SY,US,YE'

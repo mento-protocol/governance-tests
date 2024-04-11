@@ -18,13 +18,13 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "@openzeppelin/contracts": "4.8.3",
     "@mento-protocol/mento-core-ts": "0.2.2",
-    "@mento-protocol/mento-sdk": "0.2.4",
+    "@mento-protocol/mento-sdk": "0.2.5",
     "@nomicfoundation/hardhat-chai-matchers": "^2.0.3",
     "@nomicfoundation/hardhat-ethers": "^3.0.5",
     "@nomicfoundation/hardhat-network-helpers": "^1.0.10",
     "@nomicfoundation/hardhat-toolbox": "^4.0.0",
+    "@openzeppelin/contracts": "4.8.3",
     "@tsconfig/strictest": "^2.0.2",
     "@types/chai": "^4.3.11",
     "@types/mocha": "^10.0.6",
@@ -40,6 +40,7 @@
     "hardhat": "^2.19.4",
     "prettier": "^3.2.4",
     "ts-node": "^10.9.2",
-    "typescript": "^5.3.3"
+    "typescript": "^5.3.3",
+    "dotenv": "^16.4.5"
   }
 }
