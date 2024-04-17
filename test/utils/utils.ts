@@ -8,37 +8,32 @@ import {
   MentoGovernor__factory,
 } from '@mento-protocol/mento-core-ts';
 import * as mento from '@mento-protocol/mento-sdk';
+import { COUNTRY_NAMES } from './constants';
+
 // Move block.timestamp and block.number in sync
 export const timeTravel = async (days: number): Promise<void> => {
   const blocks = (days * 86400) / 5 + 1;
   await helpers.mine(blocks, { interval: 5 });
 };
-import { COUNTRY_NAMES } from './constants';
 
 export const calculateVotingPower = (
   tokens: bigint,
   slopePeriod: bigint,
   cliffPeriod: bigint,
 ): bigint => {
-  const ST_FORMULA_CONST_MULTIPLIER = 2n * 10n ** 7n;
-  const ST_FORMULA_CLIFF_MULTIPLIER = 8n * 10n ** 7n;
-  const ST_FORMULA_SLOPE_MULTIPLIER = 4n * 10n ** 7n;
-  const ST_FORMULA_DIVIDER = 1n * 10n ** 8n;
+  const ST_FORMULA_BASIS = 1n * 10n ** 8n;
   const MAX_CLIFF_PERIOD = 103n;
   const MAX_SLOPE_PERIOD = 104n;
-  const MIN_CLIFF_PERIOD = 0n;
-  const MIN_SLOPE_PERIOD = 1n;
 
-  const amount =
-    (tokens *
-      (ST_FORMULA_CONST_MULTIPLIER +
-        (ST_FORMULA_CLIFF_MULTIPLIER * (cliffPeriod - MIN_CLIFF_PERIOD)) /
-          (MAX_CLIFF_PERIOD - MIN_CLIFF_PERIOD) +
-        (ST_FORMULA_SLOPE_MULTIPLIER * (slopePeriod - MIN_SLOPE_PERIOD)) /
-          (MAX_SLOPE_PERIOD - MIN_SLOPE_PERIOD))) /
-    ST_FORMULA_DIVIDER;
+  const sum =
+    (ST_FORMULA_BASIS * cliffPeriod) / MAX_CLIFF_PERIOD +
+    (ST_FORMULA_BASIS * slopePeriod) / MAX_SLOPE_PERIOD;
 
-  return amount;
+  const correctedValue = sum > ST_FORMULA_BASIS ? ST_FORMULA_BASIS : sum;
+
+  const votingPower = (tokens * correctedValue) / ST_FORMULA_BASIS;
+
+  return votingPower;
 };
 
 export const setUpTestAccounts = async (
