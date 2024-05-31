@@ -9,8 +9,8 @@ devDependencies:
     specifier: 0.2.2
     version: 0.2.2
   '@mento-protocol/mento-sdk':
-    specifier: 0.2.6
-    version: 0.2.6(ethers@6.11.1)
+    specifier: 0.2.8
+    version: 0.2.8(ethers@6.11.1)
   '@nomicfoundation/hardhat-chai-matchers':
     specifier: ^2.0.3
     version: 2.0.5(@nomicfoundation/hardhat-ethers@3.0.5)(chai@4.4.1)(ethers@6.11.1)(hardhat@2.20.0)
@@ -508,8 +508,8 @@ packages:
     resolution: {integrity: sha512-jrJdglXnTecveV0AUp9qoENXL0c7x/deNp4Abkyy7Flm0ChhyGd7qWd7W5djDIYpnPM5xzeQnsGg2b8jyNf2Xw==}
     dev: true
 
-  /@mento-protocol/mento-sdk@0.2.6(ethers@6.11.1):
-    resolution: {integrity: sha512-um8hlig+SzMO/YKU874+U9Guf4VJge9c4x8wmfyPKhr8PWaXrz+A+3ePKDmd91vhZrTNanlmfa73I+kOiG5bmQ==}
+  /@mento-protocol/mento-sdk@0.2.8(ethers@6.11.1):
+    resolution: {integrity: sha512-/J/G6rFDUccBTI1YMHqk/y+ykxk1fziL8KbI7aqtsomWep066pWN5zCKqChfimnMJl8SBycZ9RI6G74paCMFug==}
     engines: {node: '>=14'}
     peerDependencies:
       ethers: ^5.7
@@ -2959,6 +2959,7 @@ packages:
 
   /glob@5.0.15:
     resolution: {integrity: sha512-c9IPMazfRITpmAAKi22dK1VKxGDX9ehhqfABDriL/lzO92xcUKEJPQHrVA/2YHSNFB4iFlykVmWvwo48nr3OxA==}
+    deprecated: Glob versions prior to v9 are no longer supported
     dependencies:
       inflight: 1.0.6
       inherits: 2.0.4
