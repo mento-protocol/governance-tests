@@ -17,6 +17,7 @@ import {
 } from '@mento-protocol/mento-core-ts';
 import { getMessage } from './utils/utils';
 import { HardhatEthersSigner } from '@nomicfoundation/hardhat-ethers/signers';
+import 'dotenv/config';
 
 describe('Airgrab', function () {
   const { provider } = ethers;
@@ -28,6 +29,10 @@ describe('Airgrab', function () {
   let mentoTreasury: TimelockController;
 
   // Test user with KYC and allocation
+
+  if (!process.env.AIRGRAB_TESTER) {
+    throw new Error('Missing AIRGRAB_TESTER env variable');
+  }
   const testUser: string = getAddress(process.env.AIRGRAB_TESTER!);
 
   beforeEach(async function () {
