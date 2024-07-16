@@ -90,7 +90,7 @@ describe('Airgrab', function () {
       approvedAt: number,
       fractalId: string;
 
-    const claimAmount = parseEther('123.456789');
+    const claimAmount = parseEther('839.849624060150300000');
 
     before(async function () {
       const signer = new ethers.Wallet(
