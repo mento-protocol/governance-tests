@@ -90,7 +90,7 @@ describe('Emission Contract', function () {
         const totalExpectedEmission = expectedEmission - emissionTotalEmitteed;
 
         // Add a small tolerance of 0.1%
-        const tolerance = (totalExpectedEmission * BigInt(1)) / BigInt(1000);
+        const tolerance = (totalExpectedEmission * 1n) / 1000n;
 
         expect(calculatedEmission).to.be.closeTo(
           totalExpectedEmission,
