@@ -64,7 +64,7 @@ async function pauseMentoToken(
   }
 }
 
-describe.only('Mento Token', function () {
+describe('Mento Token', function () {
   const { provider, parseEther } = ethers;
 
   let mentoAddresses: mento.ContractAddresses;
