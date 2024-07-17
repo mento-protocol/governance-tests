@@ -34,7 +34,7 @@ async function pauseMentoToken(
   const isPaused = await mentoToken.paused();
   if (!isPaused) {
     // Read the current value of slot 0
-    // inspect MentoToken storage-layout --pretty to see the layout
+    // forge inspect MentoToken storage-layout --pretty to see the layout
     const currentSlotValue = await ethers.provider.getStorage(
       mentoTokenAddress,
       0,
