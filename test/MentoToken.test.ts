@@ -20,7 +20,51 @@ async function unpauseMentoToken(
   await mentoToken.connect(timelockController!).unpause();
 }
 
-describe('Mento Token', function () {
+async function pauseMentoToken(
+  mentoAddresses: mento.ContractAddresses,
+): Promise<void> {
+  const mentoTokenAddress = mentoAddresses.MentoToken;
+
+  const mentoToken = MentoToken__factory.connect(
+    mentoAddresses.MentoToken,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ethers.provider as any,
+  );
+
+  const isPaused = await mentoToken.paused();
+  if (!isPaused) {
+    // Read the current value of slot 0
+    const currentSlotValue = await ethers.provider.getStorage(
+      mentoTokenAddress,
+      0,
+    );
+
+    // Convert the hex string to a bigint for easier manipulation
+    let slotValueBigInt = BigInt(currentSlotValue);
+
+    // Set the _paused bit (21st byte) to 1 without modifying the _owner address
+    slotValueBigInt = slotValueBigInt | (BigInt(1) << BigInt(160));
+
+    // Convert back to hex string, maintaining 32 byte length
+    const newSlotValue = ethers.toBeHex(slotValueBigInt, 32);
+
+    // Set the new storage value
+    await ethers.provider.send('hardhat_setStorageAt', [
+      mentoTokenAddress,
+      '0x0', // slot 0
+      newSlotValue,
+    ]);
+
+    // Verify that the token is now paused
+    const nowPaused = await mentoToken.paused();
+
+    if (!nowPaused) {
+      throw new Error('Mento Token is not paused...');
+    }
+  }
+}
+
+describe.only('Mento Token', function () {
   const { provider, parseEther } = ethers;
 
   let mentoAddresses: mento.ContractAddresses;
@@ -30,6 +74,9 @@ describe('Mento Token', function () {
     // reset the fork state between tests to not pollute the state
     // @ts-expect-error - forking doesn't exist in hre for some reason
     await helpers.reset(hre.network.config.forking.url);
+
+    // Pause the token if it is unpaused as that is the expected state
+    await pauseMentoToken(mentoAddresses);
   });
 
   before(async function () {
