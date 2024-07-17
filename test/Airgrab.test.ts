@@ -18,6 +18,7 @@ import {
 import { getMessage } from './utils/utils';
 import { HardhatEthersSigner } from '@nomicfoundation/hardhat-ethers/signers';
 import 'dotenv/config';
+import { networks } from '../config';
 
 describe('Airgrab', function () {
   const { provider } = ethers;
@@ -39,6 +40,11 @@ describe('Airgrab', function () {
     // reset the fork state between tests to not pollute the state
     // @ts-expect-error - forking doesn't exist in hre for some reason
     await helpers.reset(hre.network.config.forking.url);
+
+    // if this chain id is mainnet skip the test.
+    if (hre.network.config.chainId === networks.celo.chainId) {
+      this.skip();
+    }
   });
 
   before(async function () {
