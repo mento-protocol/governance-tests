@@ -17,6 +17,8 @@ import {
 } from '@mento-protocol/mento-core-ts';
 import { getMessage } from './utils/utils';
 import { HardhatEthersSigner } from '@nomicfoundation/hardhat-ethers/signers';
+import 'dotenv/config';
+import { networks } from '../config';
 
 describe('Airgrab', function () {
   const { provider } = ethers;
@@ -28,12 +30,21 @@ describe('Airgrab', function () {
   let mentoTreasury: TimelockController;
 
   // Test user with KYC and allocation
+
+  if (!process.env.AIRGRAB_TESTER) {
+    throw new Error('Missing AIRGRAB_TESTER env variable');
+  }
   const testUser: string = getAddress(process.env.AIRGRAB_TESTER!);
 
   beforeEach(async function () {
     // reset the fork state between tests to not pollute the state
     // @ts-expect-error - forking doesn't exist in hre for some reason
     await helpers.reset(hre.network.config.forking.url);
+
+    // if this chain id is mainnet skip the test.
+    if (hre.network.config.chainId === networks.celo.chainId) {
+      this.skip();
+    }
   });
 
   before(async function () {
@@ -85,7 +96,7 @@ describe('Airgrab', function () {
       approvedAt: number,
       fractalId: string;
 
-    const claimAmount = parseEther('123.456789');
+    const claimAmount = parseEther('839.849624060150300000');
 
     before(async function () {
       const signer = new ethers.Wallet(

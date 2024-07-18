@@ -10,7 +10,10 @@
       "skipFiles": ["<node_internals>/**", "${workspaceRoot}/node_modules/**"],
       "cwd": "${workspaceFolder}",
       "runtimeExecutable": "pnpm",
-      "runtimeArgs": ["${workspaceFolder}/node_modules/.bin/hardhat", "test"]
+      "runtimeArgs": ["${workspaceFolder}/node_modules/.bin/hardhat", "test"],
+      "env": {
+        "NETWORK": "alfajores"
+      }
     }
   ]
 }

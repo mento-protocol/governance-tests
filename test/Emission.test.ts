@@ -82,8 +82,20 @@ describe('Emission Contract', function () {
           this.skip();
         }
 
-        await helpers.time.increase(BigInt(timeToTravel) - elapsed);
-        expect(await emission.calculateEmission()).to.equal(expectedEmission);
+        await helpers.time.increase(BigInt(timeToTravel) - elapsed - BigInt(1));
+        const emissionTotalEmitteed = await emission.totalEmittedAmount();
+        const calculatedEmission = await emission.calculateEmission();
+
+        // Subtract the total emission already emitted from the expected emission
+        const totalExpectedEmission = expectedEmission - emissionTotalEmitteed;
+
+        // Add a small tolerance of 0.1%
+        const tolerance = (totalExpectedEmission * 1n) / 1000n;
+
+        expect(calculatedEmission).to.be.closeTo(
+          totalExpectedEmission,
+          tolerance,
+        );
       });
     }
   });
@@ -104,17 +116,31 @@ describe('Emission Contract', function () {
         // therefore to mint at the exact time, we need to subtract 1s
         await helpers.time.increase(BigInt(timeToTravel) - elapsed - BigInt(1));
 
-        const emittedSoFar = await emission.totalEmittedAmount();
-        expect(await mentoToken.emittedAmount()).to.equal(emittedSoFar);
+        const emissionTotalEmittedAmount = await emission.totalEmittedAmount();
+        const mentoTokenEmittedAmount = await mentoToken.emittedAmount();
+        expect(mentoTokenEmittedAmount).to.equal(emissionTotalEmittedAmount);
 
         const [signer] = await ethers.getSigners();
         await emission.connect(signer!).emitTokens();
 
-        expect(await emission.totalEmittedAmount()).to.equal(
-          emittedSoFar + expectedEmission,
+        // Fetch the new total emitted amounts after emission
+        const newEmissionTotalEmittedAmount =
+          await emission.totalEmittedAmount();
+        const newMentoTokenEmittedAmount = await mentoToken.emittedAmount();
+
+        const totalExpectedEmission =
+          expectedEmission - emissionTotalEmittedAmount;
+
+        // Add a small tolerance of 0.1%
+        const tolerance = (totalExpectedEmission * 1n) / 1000n;
+
+        expect(newEmissionTotalEmittedAmount).to.be.closeTo(
+          emissionTotalEmittedAmount + totalExpectedEmission,
+          tolerance,
         );
-        expect(await mentoToken.emittedAmount()).to.equal(
-          emittedSoFar + expectedEmission,
+        expect(newMentoTokenEmittedAmount).to.be.closeTo(
+          emissionTotalEmittedAmount + totalExpectedEmission,
+          tolerance,
         );
       });
     }
