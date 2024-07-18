@@ -54,7 +54,7 @@ export const setUpTestAccounts = async (
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ethers.provider as any,
   );
-  const amount = ethers.parseEther('1000000');
+  const amount = ethers.parseEther('100000000');
 
   for (const account of accounts) {
     await mentoToken.connect(emissionSigner!).mint(account.address, amount);
