@@ -82,20 +82,14 @@ describe('Emission Contract', function () {
           this.skip();
         }
 
-        await helpers.time.increase(BigInt(timeToTravel) - elapsed - BigInt(1));
+        await helpers.time.increase(BigInt(timeToTravel) - elapsed);
         const emissionTotalEmitteed = await emission.totalEmittedAmount();
         const calculatedEmission = await emission.calculateEmission();
 
         // Subtract the total emission already emitted from the expected emission
         const totalExpectedEmission = expectedEmission - emissionTotalEmitteed;
 
-        // Add a small tolerance of 0.1%
-        const tolerance = (totalExpectedEmission * 1n) / 1000n;
-
-        expect(calculatedEmission).to.be.closeTo(
-          totalExpectedEmission,
-          tolerance,
-        );
+        expect(calculatedEmission).to.be.eq(totalExpectedEmission);
       });
     }
   });
@@ -131,16 +125,11 @@ describe('Emission Contract', function () {
         const totalExpectedEmission =
           expectedEmission - emissionTotalEmittedAmount;
 
-        // Add a small tolerance of 0.1%
-        const tolerance = (totalExpectedEmission * 1n) / 1000n;
-
-        expect(newEmissionTotalEmittedAmount).to.be.closeTo(
+        expect(newEmissionTotalEmittedAmount).to.be.eq(
           emissionTotalEmittedAmount + totalExpectedEmission,
-          tolerance,
         );
-        expect(newMentoTokenEmittedAmount).to.be.closeTo(
+        expect(newMentoTokenEmittedAmount).to.be.eq(
           emissionTotalEmittedAmount + totalExpectedEmission,
-          tolerance,
         );
       });
     }

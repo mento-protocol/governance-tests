@@ -40,6 +40,7 @@ export const setUpTestAccounts = async (
   accounts: HardhatEthersSigner[],
   giveVotingPower: boolean,
   mentoAddresses: mento.ContractAddresses,
+  mintAmount: string = '10000000',
 ): Promise<void> => {
   const emissionSigner = await ethers.getImpersonatedSigner(
     mentoAddresses.Emission,
@@ -54,7 +55,7 @@ export const setUpTestAccounts = async (
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ethers.provider as any,
   );
-  const amount = ethers.parseEther('1000000');
+  const amount = ethers.parseEther(mintAmount);
 
   for (const account of accounts) {
     await mentoToken.connect(emissionSigner!).mint(account.address, amount);
