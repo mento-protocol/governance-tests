@@ -60,7 +60,12 @@ describe('Governance', function () {
     // @ts-expect-error - forking doesn't exist in hre for some reason
     await helpers.reset(hre.network.config.forking.url);
 
-    await setUpTestAccounts([alice, bob, charlie], true, governanceAddresses);
+    await setUpTestAccounts(
+      [alice, bob, charlie],
+      true,
+      governanceAddresses,
+      '100000000',
+    );
   });
 
   it('should transfer tokens from treasury', async function () {
