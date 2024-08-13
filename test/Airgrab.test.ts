@@ -40,17 +40,20 @@ describe('Airgrab', function () {
     // reset the fork state between tests to not pollute the state
     // @ts-expect-error - forking doesn't exist in hre for some reason
     await helpers.reset(hre.network.config.forking.url);
-
-    // if this chain id is mainnet skip the test.
-    if (hre.network.config.chainId === networks.celo.chainId) {
-      this.skip();
-    }
   });
 
   before(async function () {
     const chainId = hre.network.config.chainId;
     if (!chainId) {
       throw new Error('Chain ID not found');
+    }
+
+    // if chain is celo or baklava skip tests
+    if (
+      chainId === networks.celo.chainId ||
+      chainId === networks.baklava.chainId
+    ) {
+      this.skip();
     }
 
     governanceAddresses = mento.addresses[chainId]!;
@@ -81,6 +84,11 @@ describe('Airgrab', function () {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       provider as any,
     );
+
+    // if airdrop is finished skip tests
+    if ((await airgrab.endTimestamp()) < (await helpers.time.latest())) {
+      this.skip();
+    }
 
     console.log('\r\n======================================================');
     console.log('Running Airgrab tests on network with chain id:', chainId);
