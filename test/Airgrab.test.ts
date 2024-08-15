@@ -18,9 +18,9 @@ import {
 import { getMessage } from './utils/utils';
 import { HardhatEthersSigner } from '@nomicfoundation/hardhat-ethers/signers';
 import 'dotenv/config';
-import { networks } from '../config';
 
-describe('Airgrab', function () {
+// airgrab is finished, so we can skip this test
+describe.skip('Airgrab', function () {
   const { provider } = ethers;
 
   let governanceAddresses: mento.ContractAddresses;
@@ -46,14 +46,6 @@ describe('Airgrab', function () {
     const chainId = hre.network.config.chainId;
     if (!chainId) {
       throw new Error('Chain ID not found');
-    }
-
-    // if chain is celo or baklava skip tests
-    if (
-      chainId === networks.celo.chainId ||
-      chainId === networks.baklava.chainId
-    ) {
-      this.skip();
     }
 
     governanceAddresses = mento.addresses[chainId]!;
@@ -84,11 +76,6 @@ describe('Airgrab', function () {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       provider as any,
     );
-
-    // if airdrop is finished skip tests
-    if ((await airgrab.endTimestamp()) < (await helpers.time.latest())) {
-      this.skip();
-    }
 
     console.log('\r\n======================================================');
     console.log('Running Airgrab tests on network with chain id:', chainId);

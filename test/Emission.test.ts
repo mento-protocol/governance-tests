@@ -46,7 +46,6 @@ describe('Emission Contract', function () {
       throw new Error('Chain ID not found');
     }
 
-    // if chain is baklava skip tests
     if (chainId === networks.baklava.chainId) {
       this.skip();
     }
