@@ -42,9 +42,13 @@ export const setUpTestAccounts = async (
   mentoAddresses: mento.ContractAddresses,
   mintAmount: string = '10000000',
 ): Promise<void> => {
+  // if the Emission contract is not deployed on a chain, emitter is deployer
   const emissionSigner = await ethers.getImpersonatedSigner(
-    mentoAddresses.Emission,
+    mentoAddresses.Emission === '0xNotDeployed'
+      ? process.env.DEPLOYER!
+      : mentoAddresses.Emission,
   );
+
   const mentoToken = MentoToken__factory.connect(
     mentoAddresses.MentoToken,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

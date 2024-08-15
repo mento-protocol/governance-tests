@@ -1,6 +1,6 @@
 # Mento Governance Tests
 
-This repo contains tests to verify the Mento Protocol governance setup.
+This repo contains fork tests to verify the Mento Protocol governance setup.
 
 ## Getting Started
 
@@ -14,9 +14,12 @@ cd governance-tests
 # Install dependencies with pnpm
 pnpm install
 
-# Build the contracts, generate ts types & run typescript compiler
-pnpm build
+# Run the tests against celo
+pnpm test
 
 # Run the tests against alfajores
 pnpm test:alfajores
+
+# Run the tests against baklava
+pnpm test:baklava
 ```

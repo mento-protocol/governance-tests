@@ -32,10 +32,11 @@ jobs:
         run: pnpm lint
 
       - name: Start node & test
-        run: pnpm test:alfajores
+        run: pnpm test
         env:
           FRACTAL_CLIENT_ID: 'I28eze1-UTsP66nYyBDgiRrGCA7Oe6cRFkl7Gk0Gr1A'
           MERKLE_PROOF: ${{secrets.MERKLE_PROOF}}
           AIRGRAB_TESTER: ${{secrets.AIRGRAB_TESTER}}
           AIRGRAB_TESTER_PK: ${{secrets.AIRGRAB_TESTER_PK}}
           RESTRICTED_COUNTRIES: 'CD,CU,GB,IR,KP,ML,MM,SS,SY,US,YE'
+          DEPLOYER: '0x56fd3f2bee130e9867942d0f463a16fbe49b8d81'

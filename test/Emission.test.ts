@@ -9,6 +9,7 @@ import {
   MentoToken,
   MentoToken__factory,
 } from '@mento-protocol/mento-core-ts';
+import { networks } from '../config';
 
 describe('Emission Contract', function () {
   const { provider } = ethers;
@@ -43,6 +44,10 @@ describe('Emission Contract', function () {
     const chainId = hre.network.config.chainId;
     if (!chainId) {
       throw new Error('Chain ID not found');
+    }
+
+    if (chainId === networks.baklava.chainId) {
+      this.skip();
     }
 
     governanceAddresses = mento.addresses[chainId]!;

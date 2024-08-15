@@ -124,7 +124,9 @@ describe('Mento Token', function () {
 
   it('should successfully mint when called by the Emission contract', async function () {
     const emissionSigner = await ethers.getImpersonatedSigner(
-      mentoAddresses.Emission,
+      mentoAddresses.Emission === '0xNotDeployed'
+        ? process.env.DEPLOYER!
+        : mentoAddresses.Emission,
     );
     const [receiver] = await ethers.getSigners();
     const supplyBefore = await mentoToken.totalSupply();
@@ -139,7 +141,9 @@ describe('Mento Token', function () {
 
   it('should allow for tokens to be transferred by anyone when unpaused', async function () {
     const emissionSigner = await ethers.getImpersonatedSigner(
-      mentoAddresses.Emission,
+      mentoAddresses.Emission === '0xNotDeployed'
+        ? process.env.DEPLOYER!
+        : mentoAddresses.Emission,
     );
     const [bob, alice] = await ethers.getSigners();
     const supplyBefore = await mentoToken.totalSupply();
@@ -172,7 +176,9 @@ describe('Mento Token', function () {
 
   it('should allow for tokens to be transferred by owner,locking and emission when paused', async function () {
     const addresses = [
-      mentoAddresses.Emission,
+      mentoAddresses.Emission === '0xNotDeployed'
+        ? process.env.DEPLOYER!
+        : mentoAddresses.Emission,
       mentoAddresses.Locking,
       mentoAddresses.TimelockController,
     ];
@@ -201,7 +207,9 @@ describe('Mento Token', function () {
 
   it('should allow for tokens to be burned by anyone when unpaused', async function () {
     const emissionSigner = await ethers.getImpersonatedSigner(
-      mentoAddresses.Emission,
+      mentoAddresses.Emission === '0xNotDeployed'
+        ? process.env.DEPLOYER!
+        : mentoAddresses.Emission,
     );
     const [bob] = await ethers.getSigners();
     const supplyBefore = await mentoToken.totalSupply();
