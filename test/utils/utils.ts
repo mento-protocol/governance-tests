@@ -1,7 +1,7 @@
 import { HardhatEthersSigner } from '@nomicfoundation/hardhat-ethers/signers';
 import * as helpers from '@nomicfoundation/hardhat-toolbox/network-helpers';
 import { ethers } from 'hardhat';
-import { EventLog } from 'ethers';
+import { EventLog, MaxUint256 } from 'ethers';
 import {
   MentoToken__factory,
   Locking__factory,
@@ -64,7 +64,9 @@ export const setUpTestAccounts = async (
   for (const account of accounts) {
     await mentoToken.connect(emissionSigner!).mint(account.address, amount);
     if (giveVotingPower) {
-      await mentoToken.connect(account).approve(locking.getAddress(), amount);
+      await mentoToken
+        .connect(account)
+        .approve(locking.getAddress(), MaxUint256);
       await locking
         .connect(account)
         .lock(account.address, account.address, amount, 52, 52);
