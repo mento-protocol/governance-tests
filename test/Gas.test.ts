@@ -41,7 +41,7 @@ describe('Gas Tests', function () {
       this.skip();
     }
 
-    await setupEnvironment(1000);
+    await setupEnvironment(500);
 
     console.log('\r\n========================');
     console.log(`Running Gas Tests on network with chain id: ${chainId}`);
