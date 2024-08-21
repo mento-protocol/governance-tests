@@ -31,7 +31,7 @@ describe('Gas Tests', function () {
   let target: string;
 
   before(async function () {
-    // @ts-expect-error
+    // @ts-expect-error - forking doesn't exist in hre because of hardhat version mismatch
     await helpers.reset(hre.network.config.forking.url);
     this.timeout(0);
 
@@ -49,6 +49,7 @@ describe('Gas Tests', function () {
   });
 
   it('submitProposal should spend reasonable gas with high number of locks', async function () {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const tx: any = await governor
       .connect(alice)
       [
@@ -73,10 +74,12 @@ describe('Gas Tests', function () {
     );
     timeTravel(1);
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const tx1: any = await governor.connect(alice).castVote(proposalId, 1);
     const receipt1 = await tx1.wait();
     const actualGasUsed1 = receipt1.gasUsed;
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const tx2: any = await governor.connect(bob).castVote(proposalId, 0);
     const receipt2 = await tx2.wait();
     const actualGasUsed2 = receipt2.gasUsed;
@@ -104,6 +107,7 @@ describe('Gas Tests', function () {
 
     timeTravel(7);
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const tx: any = await governor.connect(alice)['queue(uint256)'](proposalId);
     const receipt = await tx.wait();
     const actualGasUsed = receipt.gasUsed;
@@ -132,6 +136,7 @@ describe('Gas Tests', function () {
     await governor.connect(alice)['queue(uint256)'](proposalId);
     timeTravel(2);
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const tx: any = await governor
       .connect(alice)
       ['execute(uint256)'](proposalId);
@@ -162,6 +167,7 @@ describe('Gas Tests', function () {
     await governor.connect(alice)['queue(uint256)'](proposalId);
     timeTravel(1);
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const tx: any = await (governor as any)
       .connect(alice)
       ['cancel(uint256)'](proposalId);
@@ -190,14 +196,17 @@ describe('Gas Tests', function () {
 
     mentoToken = MentoToken__factory.connect(
       governanceAddresses.MentoToken,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       provider as any,
     );
     locking = Locking__factory.connect(
       governanceAddresses.Locking,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       provider as any,
     );
     governor = MentoGovernor__factory.connect(
       governanceAddresses.MentoGovernor,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       provider as any,
     );
 
