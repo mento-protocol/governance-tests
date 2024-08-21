@@ -1,6 +1,7 @@
 import { expect } from 'chai';
 import hre, { ethers } from 'hardhat';
 import * as mento from '@mento-protocol/mento-sdk';
+import * as helpers from '@nomicfoundation/hardhat-toolbox/network-helpers';
 import { HardhatEthersSigner } from '@nomicfoundation/hardhat-ethers/signers';
 
 import {
@@ -13,6 +14,7 @@ import {
 } from '@mento-protocol/mento-core-ts';
 
 import { timeTravel, setUpTestAccounts, submitProposal } from './utils/utils';
+import { networks } from '../config';
 
 describe('Gas Tests', function () {
   const { provider, parseEther, getSigners } = ethers;
@@ -29,9 +31,18 @@ describe('Gas Tests', function () {
   let target: string;
 
   before(async function () {
+    // @ts-expect-error
+    await helpers.reset(hre.network.config.forking.url);
     this.timeout(0);
 
-    const chainId = await setupEnvironment();
+    const chainId = hre.network.config.chainId;
+
+    if (chainId !== networks.celo.chainId) {
+      this.skip();
+    }
+
+    await setupEnvironment(1000);
+
     console.log('\r\n========================');
     console.log(`Running Gas Tests on network with chain id: ${chainId}`);
     console.log('========================\r\n');
@@ -162,7 +173,7 @@ describe('Gas Tests', function () {
     expect(actualGasUsed).to.be.lt(500_000);
   });
 
-  const setupEnvironment = async (): Promise<number> => {
+  const setupEnvironment = async (numberOfLocks: number): Promise<number> => {
     console.log('Setting up environment for gas tests');
 
     const chainId = hre.network.config.chainId;
@@ -207,9 +218,9 @@ describe('Gas Tests', function () {
       .connect(treasury)
       .transfer(bob.address, parseEther('1000'));
 
-    console.log('Creating more locks');
-    for (let i = 1; i <= 500; i++) {
-      if (i % 20 === 0) {
+    console.log('Creating more locks, this may take a while');
+    for (let i = 1; i <= numberOfLocks; i++) {
+      if (i % 50 === 0) {
         console.log(`Created ${i} locks`);
         timeTravel(1);
       }
