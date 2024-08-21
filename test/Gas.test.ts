@@ -48,7 +48,48 @@ describe('Gas Tests', function () {
     console.log('========================\r\n');
   });
 
-  it('submitProposal should spend reasonable gas with high number of locks', async function () {
+  it('locking.withdraw', async function () {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const tx: any = await locking.connect(alice).withdraw();
+
+    const receipt = await tx.wait();
+    const actualGasUsed = receipt.gasUsed;
+
+    console.log(`Gas used for withdrawal: ${actualGasUsed}`);
+
+    expect(actualGasUsed).to.be.lt(100_000);
+  });
+
+  it('locking.lock', async function () {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const tx: any = await locking
+      .connect(alice)
+      .lock(alice.address, alice.address, parseEther('1'), 6, 6);
+
+    const receipt = await tx.wait();
+    const actualGasUsed = receipt.gasUsed;
+
+    console.log(`Gas used for lock: ${actualGasUsed}`);
+
+    expect(actualGasUsed).to.be.lt(500_000);
+  });
+
+  it('locking.relock', async function () {
+    const id = await locking.counter();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const tx: any = await locking
+      .connect(alice)
+      .relock(id, alice.address, parseEther('1'), 6, 6);
+
+    const receipt = await tx.wait();
+    const actualGasUsed = receipt.gasUsed;
+
+    console.log(`Gas used for relock: ${actualGasUsed}`);
+
+    expect(actualGasUsed).to.be.lt(500_000);
+  });
+
+  it('governor.propose', async function () {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const tx: any = await governor
       .connect(alice)
@@ -60,10 +101,10 @@ describe('Gas Tests', function () {
 
     console.log(`Gas used for submitting proposal: ${actualGasUsed}`);
 
-    expect(actualGasUsed).to.be.lt(1_000_000);
+    expect(actualGasUsed).to.be.lt(500_000);
   });
 
-  it('castVote should spend reasonable gas with high number of locks', async function () {
+  it('governor.castVote', async function () {
     const proposalId = submitProposal(
       governanceAddresses,
       alice,
@@ -91,7 +132,7 @@ describe('Gas Tests', function () {
     expect(actualGasUsed2).to.be.lt(200_000);
   });
 
-  it('queue should spend reasonable gas with high number of locks', async function () {
+  it('governor.queue', async function () {
     const proposalId = submitProposal(
       governanceAddresses,
       alice,
@@ -117,7 +158,7 @@ describe('Gas Tests', function () {
     expect(actualGasUsed).to.be.lt(500_000);
   });
 
-  it('execute should spend reasonable gas with high number of locks', async function () {
+  it('governor.execute', async function () {
     const proposalId = submitProposal(
       governanceAddresses,
       alice,
@@ -148,7 +189,7 @@ describe('Gas Tests', function () {
     expect(actualGasUsed).to.be.lt(500_000);
   });
 
-  it('cancel proposal should spend reasonable gas with high number of locks', async function () {
+  it('governor.cancel', async function () {
     const proposalId = submitProposal(
       governanceAddresses,
       alice,
