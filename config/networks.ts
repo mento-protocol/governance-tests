@@ -3,11 +3,11 @@ export type NetworkName = 'alfajores' | 'celo';
 export type NetworkConfig = {
   chainId: number;
   url: string;
-  hardfork: string
+  hardfork: string;
   gasSettings: {
     initialBaseFeePerGas?: number;
     gasPrice?: number;
-  }
+  };
 };
 
 export type Networks = {
@@ -24,8 +24,8 @@ export const networks: Networks = {
     hardfork: 'cancun',
     gasSettings: {
       initialBaseFeePerGas: 0,
-      gasPrice: 0
-    }
+      gasPrice: 0,
+    },
   },
   celo: {
     chainId: 42220,
@@ -33,6 +33,6 @@ export const networks: Networks = {
     hardfork: 'berlin',
     gasSettings: {
       gasPrice: 0,
-    }
+    },
   },
 };

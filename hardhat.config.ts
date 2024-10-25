@@ -32,7 +32,6 @@ const config: HardhatUserConfig = {
       chainId: targetNetwork.chainId,
       hardfork: targetNetwork.hardfork,
       ...targetNetwork.gasSettings,
-
     },
   },
   solidity: {
