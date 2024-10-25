@@ -9,9 +9,8 @@ import {
   MentoToken,
   MentoToken__factory,
 } from '@mento-protocol/mento-core-ts';
-import { networks } from '../config';
 
-describe('Emission Contract', function () {
+describe('Emission Contract', function() {
   const { provider } = ethers;
 
   const DAY = 60 * 60 * 24;
@@ -34,20 +33,16 @@ describe('Emission Contract', function () {
   let emission: Emission;
   let mentoToken: MentoToken;
 
-  beforeEach(async function () {
+  beforeEach(async function() {
     // reset the fork state between tests to not pollute the state
     // @ts-expect-error - forking doesn't exist in hre for some reason
     await helpers.reset(hre.network.config.forking.url);
   });
 
-  before(async function () {
+  before(async function() {
     const chainId = hre.network.config.chainId;
     if (!chainId) {
       throw new Error('Chain ID not found');
-    }
-
-    if (chainId === networks.baklava.chainId) {
-      this.skip();
     }
 
     governanceAddresses = mento.addresses[chainId]!;
@@ -75,9 +70,9 @@ describe('Emission Contract', function () {
     console.log('========================\r\n');
   });
 
-  describe('calculateEmission()', async function () {
+  describe('calculateEmission()', async function() {
     for (const [period, timeToTravel, expectedEmission] of EMISSION_SCHEDULE) {
-      it(`should calculate the correct amount after ${period}`, async function () {
+      it(`should calculate the correct amount after ${period}`, async function() {
         const start = await emission.emissionStartTime();
         const now = await helpers.time.latest();
         const elapsed = BigInt(now) - start;
@@ -99,9 +94,9 @@ describe('Emission Contract', function () {
     }
   });
 
-  describe('emitTokens()', async function () {
+  describe('emitTokens()', async function() {
     for (const [period, timeToTravel, expectedEmission] of EMISSION_SCHEDULE) {
-      it(`should emit the correct amount after ${period}`, async function () {
+      it(`should emit the correct amount after ${period}`, async function() {
         const start = await emission.emissionStartTime();
         const now = await helpers.time.latest();
         const elapsed = BigInt(now) - start;
