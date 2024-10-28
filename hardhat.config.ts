@@ -19,17 +19,19 @@ function getNetworkConfig(): NetworkConfig {
   return networks[network as NetworkName];
 }
 
+const targetNetwork = getNetworkConfig();
+
 const config: HardhatUserConfig = {
   defaultNetwork: 'hardhat',
   networks: {
     hardhat: {
       forking: {
         enabled: true,
-        url: getNetworkConfig().url,
+        url: targetNetwork.url,
       },
-      chainId: getNetworkConfig().chainId,
-      hardfork: 'berlin',
-      gasPrice: 0,
+      chainId: targetNetwork.chainId,
+      hardfork: targetNetwork.hardfork,
+      ...targetNetwork.gasSettings,
     },
   },
   solidity: {
