@@ -319,6 +319,85 @@ describe('Governance', function () {
     expect(await locking.minSlopePeriod()).to.eq(newMinSlope);
   });
 
+  it.only('should correctly update the voting period', async function () {
+    console.log('Current voting period', await governor.votingPeriod());
+    const newVotingPeriod = 138240; // 2 weeks in CELO
+    const targets = [governanceAddresses.MentoGovernor];
+    const values = Array(1).fill(0);
+    const calldatas = [];
+    const description = 'Change governor config';
+
+    calldatas.push(
+      governor.interface.encodeFunctionData('setVotingPeriod', [
+        newVotingPeriod,
+      ]),
+    );
+
+    // Create a proposal to update governor config
+    const proposalId = submitProposal(
+      governanceAddresses,
+      alice,
+      targets,
+      values,
+      calldatas,
+      description,
+    );
+
+    // Vote on the proposal using multiple accounts, with the majority voting YES
+    await governor.connect(alice).castVote(proposalId, 0);
+    await governor.connect(bob).castVote(proposalId, 1);
+    await governor.connect(charlie).castVote(proposalId, 1);
+
+    // Voting period
+    await timeTravel(7);
+
+    await governor.connect(alice)['queue(uint256)'](proposalId);
+
+    // Timelock period
+    await timeTravel(2);
+
+    await governor.connect(alice)['execute(uint256)'](proposalId);
+
+    expect(await governor.votingPeriod()).to.eq(newVotingPeriod);
+
+    console.log('New voting period', await governor.votingPeriod());
+
+    await timeTravel(14);
+
+    console.log('Verifying new voting period is 8 days...');
+    // Try to queue the same proposal and verify that it now needs 8 days to be queued
+    const newProposalId = submitProposal(
+      governanceAddresses,
+      alice,
+      targets,
+      values,
+      calldatas,
+      'new description',
+    );
+
+    // Vote on the proposal using multiple accounts, with the majority voting YES
+    await governor.connect(alice).castVote(newProposalId, 0);
+    await governor.connect(bob).castVote(newProposalId, 1);
+    await governor.connect(charlie).castVote(newProposalId, 1);
+
+    // Voting period
+    await timeTravel(7);
+
+    await expect(
+      governor.connect(alice)['queue(uint256)'](newProposalId),
+    ).to.be.revertedWith('Governor: proposal not successful');
+    console.log('✅ Can not queue after 7 days');
+
+    // travel one more day and can now queue it
+    await timeTravel(1);
+    await governor.connect(alice)['queue(uint256)'](newProposalId);
+    console.log('✅ Can queue after 8 days');
+
+    await timeTravel(2);
+    await governor.connect(alice)['execute(uint256)'](newProposalId);
+    console.log('✅ Can execute after timelock period');
+  });
+
   it('should change governor roles', async function () {
     const proposerRole = await timelock.PROPOSER_ROLE();
     const cancellerRole = await timelock.CANCELLER_ROLE();
