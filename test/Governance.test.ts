@@ -106,7 +106,7 @@ describe('Governance', function () {
     ).to.be.revertedWith('Governor: proposal not successful');
 
     // Voting period of 7 days
-    await timeTravel(7);
+    await timeTravel(8);
 
     // Proposal ready for queue
     await governor.connect(alice)['queue(uint256)'](proposalId);
@@ -155,7 +155,7 @@ describe('Governance', function () {
     await governor.connect(charlie).castVote(proposalId, 0);
 
     // Voting period of 7 days
-    await timeTravel(7);
+    await timeTravel(8);
 
     // Proposal ready for queue
     await governor.connect(alice)['queue(uint256)'](proposalId);
@@ -218,7 +218,7 @@ describe('Governance', function () {
     expect(await governor.state(proposalId)).to.eq(1); // active
 
     // Voting period of 7 days
-    await timeTravel(7);
+    await timeTravel(8);
     expect(await governor.state(proposalId)).to.eq(3); // defeated
 
     // Proposal is defeated and cant be queued
@@ -301,7 +301,7 @@ describe('Governance', function () {
     await governor.connect(charlie).castVote(proposalId, 1);
 
     // Voting period
-    await timeTravel(7);
+    await timeTravel(8);
 
     await governor.connect(alice)['queue(uint256)'](proposalId);
 
@@ -379,7 +379,7 @@ describe('Governance', function () {
     await governor.connect(charlie).castVote(proposalId, 1);
 
     // Voting period
-    await timeTravel(7);
+    await timeTravel(8);
 
     await governor.connect(alice)['queue(uint256)'](proposalId);
 
@@ -404,21 +404,13 @@ describe('Governance', function () {
   });
 
   it('should upgrade upgradable contracts', async function () {
-    const newLocking = await deployContract('MockLocking');
     const newTimelock = await deployContract('MockTimelock');
     const newGovernor = await deployContract('MockGovernor');
 
-    const targets = Array(3).fill(proxyAdmin.target);
-    const values = Array(3).fill(0);
+    const targets = Array(2).fill(proxyAdmin.target);
+    const values = Array(2).fill(0);
     const calldatas = [];
     const description = 'Upgrade upgradable contracts';
-
-    calldatas.push(
-      proxyAdmin.interface.encodeFunctionData('upgrade', [
-        locking.target,
-        newLocking.target,
-      ]),
-    );
 
     calldatas.push(
       proxyAdmin.interface.encodeFunctionData('upgrade', [
@@ -450,7 +442,7 @@ describe('Governance', function () {
     await governor.connect(charlie).castVote(proposalId, 1);
 
     // Voting period
-    await timeTravel(7);
+    await timeTravel(8);
 
     await governor.connect(alice)['queue(uint256)'](proposalId);
 
@@ -465,9 +457,6 @@ describe('Governance', function () {
     await governor.connect(alice)['execute(uint256)'](proposalId);
 
     // new implementations does not implement the functions
-    await expect(locking.getWeek()).to.be.revertedWith(
-      'MockLocking: getWeek not implemented',
-    );
     await expect(timelock.getMinDelay()).to.be.revertedWith(
       'MockTimelock: getMinDelay not implemented',
     );

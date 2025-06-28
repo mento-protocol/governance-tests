@@ -25,6 +25,14 @@ const config: HardhatUserConfig = {
   defaultNetwork: 'hardhat',
   networks: {
     hardhat: {
+      chains: {
+        42220: {
+          hardforkHistory: {
+            berlin: 39133978,
+            london: 39133978,
+          },
+        },
+      },
       forking: {
         enabled: true,
         url: targetNetwork.url,

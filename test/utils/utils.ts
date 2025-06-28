@@ -12,8 +12,8 @@ import { COUNTRY_NAMES } from './constants';
 
 // Move block.timestamp and block.number in sync
 export const timeTravel = async (days: number): Promise<void> => {
-  const blocks = (days * 86400) / 5 + 1;
-  await helpers.mine(blocks, { interval: 5 });
+  const blocks = days * 86400 + 1;
+  await helpers.mine(blocks, { interval: 1 });
 };
 
 export const calculateVotingPower = (

@@ -157,7 +157,7 @@ describe('Mento Upgrade', function () {
     await mentoGovernor.connect(voter2).castVote(proposalId, 1);
     await mentoGovernor.connect(voter3).castVote(proposalId, 1);
 
-    timeTravel(7);
+    timeTravel(8);
 
     await mentoGovernor.connect(proposer)['queue(uint256)'](proposalId);
 

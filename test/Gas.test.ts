@@ -146,7 +146,7 @@ describe('Gas Tests', function () {
     await governor.connect(alice).castVote(proposalId, 1);
     await governor.connect(bob).castVote(proposalId, 1);
 
-    timeTravel(7);
+    timeTravel(8);
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const tx: any = await governor.connect(alice)['queue(uint256)'](proposalId);
@@ -172,7 +172,7 @@ describe('Gas Tests', function () {
     await governor.connect(alice).castVote(proposalId, 1);
     await governor.connect(bob).castVote(proposalId, 1);
 
-    timeTravel(7);
+    timeTravel(8);
 
     await governor.connect(alice)['queue(uint256)'](proposalId);
     timeTravel(2);
@@ -203,7 +203,7 @@ describe('Gas Tests', function () {
     await governor.connect(alice).castVote(proposalId, 1);
     await governor.connect(bob).castVote(proposalId, 1);
 
-    timeTravel(7);
+    timeTravel(8);
 
     await governor.connect(alice)['queue(uint256)'](proposalId);
     timeTravel(1);
